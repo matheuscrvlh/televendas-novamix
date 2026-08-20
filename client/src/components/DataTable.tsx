@@ -26,7 +26,7 @@ export default function DataTable<T>({
     rodape,
 }: DataTableProps<T>) {
     return (
-        <div className='rounded-xl border border-gray-base/30 bg-white dark:bg-dark-surface dark:border-dark-border p-6 shadow-sm'>
+        <div className='min-w-0 rounded-xl border border-gray-base/30 bg-white dark:bg-dark-surface dark:border-dark-border p-6 shadow-sm'>
             {titulo && <span className='text-sm font-medium text-gray-text dark:text-dark-text'>{titulo}</span>}
 
             {erro && (

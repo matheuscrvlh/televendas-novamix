@@ -3,6 +3,7 @@ import fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import { meRoutes } from './routes/me.routes';
+import { televendasRoutes } from './routes/televendas.routes';
 import { connCiss } from './database/ciss.database.ts';
 
 const app = fastify();
@@ -18,10 +19,13 @@ if(!process.env.SERVER_PORT) {
     throw new Error('Erro ao encontrar JWT_SECRET no .env.')
 } else if (!process.env.CISS_DATABASE_URL) {
     throw new Error('Erro ao encontrar CISS_DATABASE_URL no .env.')
+} else if (!process.env.TELEVENDAS_VENDEDORES) {
+    throw new Error('Erro ao encontrar TELEVENDAS_VENDEDORES no .env.')
 };
 
 app.register(cookie);
 app.register(meRoutes);
+app.register(televendasRoutes);
 
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})
