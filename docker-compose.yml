@@ -3,7 +3,7 @@ services:
     build: ./server
     container_name: televendas-server
     ports:
-      - "3008:3000"
+      - "3009:3000"
     env_file:
       - ./server/.env
     environment:
@@ -17,5 +17,5 @@ services:
         VITE_API_URL: ${VITE_API_URL:?Defina a variável VITE_API_URL antes de buildar}
     container_name: televendas-client
     ports:
-      - "8088:80"
+      - "8089:80"
     restart: unless-stopped
