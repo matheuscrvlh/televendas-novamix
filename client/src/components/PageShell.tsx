@@ -67,7 +67,7 @@ export default function PageShell({
                     <h1 className='text-2xl font-semibold text-gray-text dark:text-dark-text mb-1'>{titulo}</h1>
                     <p className='text-sm text-gray-dark dark:text-dark-text-muted mb-6'>{subtitulo}</p>
 
-                    {filtros}
+                    {filtros && <div className='mt-2.5'>{filtros}</div>}
 
                     {children}
                 </section>

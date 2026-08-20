@@ -63,7 +63,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
 
                 <nav className='mt-8 flex flex-1 flex-col gap-2 overflow-y-auto px-4'>
                     <NavLink
-                        to='/'
+                        to='/dashboard'
                         end
                         onClick={fechar}
                         className={({ isActive }) => `${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`}

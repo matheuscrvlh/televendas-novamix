@@ -10,7 +10,7 @@ import { formatCurrency, formatNumber, formatPercent, formatDate } from '../lib/
 import { getPresetRange } from '../lib/date'
 import type { VisaoGeral, ClienteResumo, ClienteSemComprar, TopCliente, TopProduto } from '../types/televendas'
 
-export default function Home() {
+export default function Dashboard() {
     const { me, loading: loadingMe, error: meError } = useMe()
 
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
@@ -100,7 +100,7 @@ export default function Home() {
                         ]}
                     />
 
-                    <div className='grid grid-cols-1 gap-6 xl:grid-cols-2'>
+                    <div className='flex flex-col gap-6'>
                         <DataTable
                             titulo='Top 10 clientes'
                             rodape='Maiores faturamentos no período.'
