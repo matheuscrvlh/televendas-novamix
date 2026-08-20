@@ -2,7 +2,7 @@ import 'dotenv/config';
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
-import { financeiroRoutes } from './routes/financeiro.routes';
+import { meRoutes } from './routes/me.routes';
 import { connCiss } from './database/ciss.database.ts';
 
 const app = fastify();
@@ -21,7 +21,7 @@ if(!process.env.SERVER_PORT) {
 };
 
 app.register(cookie);
-app.register(financeiroRoutes);
+app.register(meRoutes);
 
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})

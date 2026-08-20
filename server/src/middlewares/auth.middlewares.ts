@@ -22,7 +22,6 @@ export async function authenticate(req:FastifyRequest, res:FastifyReply) {
 
     try {
         req.user = await verifyToken(token)
-        console.log(req.user)
     } catch {
         return res.code(401).send({ error: 'Token inválido ou expirado.'})
     }
@@ -31,14 +30,14 @@ export async function authenticate(req:FastifyRequest, res:FastifyReply) {
 export async function checkPermission(req:FastifyRequest, res:FastifyReply) {
     const { permissions } = req.user
     
-    const module = permissions.some(p => p.module === 'financeiro')
+    const module = permissions.some(p => p.module === 'televendas')
 
     if(!module) {
         res.code(401).send({ error: 'Módulo não liberado para esse usuário.'})
         return
     }
 
-    const permission = permissions.find(p => p.module === 'financeiro').access
+    const permission = permissions.find(p => p.module === 'televendas').access
     
     return permission
 }

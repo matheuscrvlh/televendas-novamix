@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { apiGet } from '../lib/api'
-import type { MeInfo } from '../types/financeiro'
+import type { MeInfo } from '../types/auth'
 
 export function useMe() {
     const [me, setMe] = useState<MeInfo | null>(null)
@@ -8,7 +8,7 @@ export function useMe() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        apiGet<MeInfo>('/financeiro/me')
+        apiGet<MeInfo>('/me')
             .then(setMe)
             .catch((err) => setError(err.message))
             .finally(() => setLoading(false))
