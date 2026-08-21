@@ -15,6 +15,7 @@ export default function ConfiguracoesAdmin() {
     const [erro, setErro] = useState<string | null>(null)
 
     const [valores, setValores] = useState<Record<number, string>>({})
+    const [descontos, setDescontos] = useState<Record<number, string>>({})
     const [salvando, setSalvando] = useState<number | null>(null)
 
     const [novoCodigo, setNovoCodigo] = useState('')
@@ -30,6 +31,7 @@ export default function ConfiguracoesAdmin() {
             .then((lista) => {
                 setConfig(lista)
                 setValores(Object.fromEntries(lista.map((c) => [c.codigo_vendedor, String(c.valor_minimo_pedido)])))
+                setDescontos(Object.fromEntries(lista.map((c) => [c.codigo_vendedor, String(c.desconto_percentual)])))
             })
             .catch((err) => setErro(err.message))
             .finally(() => setLoading(false))
@@ -39,11 +41,16 @@ export default function ConfiguracoesAdmin() {
 
     async function salvar(codigoVendedor: number) {
         const valor = Number(valores[codigoVendedor])
+        const desconto = Number(descontos[codigoVendedor])
         if (!Number.isFinite(valor) || valor < 0) return
+        if (!Number.isFinite(desconto) || desconto < 0 || desconto > 100) return
 
         setSalvando(codigoVendedor)
         try {
-            await apiPatch(`/configuracoes/vendedores/${codigoVendedor}`, { valorMinimoPedido: valor })
+            await apiPatch(`/configuracoes/vendedores/${codigoVendedor}`, {
+                valorMinimoPedido: valor,
+                descontoPercentual: desconto,
+            })
             carregar()
         } catch (err) {
             setErro(err instanceof ApiError ? err.message : 'Erro ao salvar.')
@@ -97,7 +104,7 @@ export default function ConfiguracoesAdmin() {
             autorizado={autorizado}
             tituloAcessoRestrito='Configurações é uma área restrita a administradores.'
             titulo='Configurações'
-            subtitulo='Valor mínimo de pedido por vendedor de televendas.'
+            subtitulo='Valor mínimo de pedido e desconto geral por vendedor de televendas.'
         >
             <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 {erro && <p className='mb-4 text-sm text-red-base'>{erro}</p>}
@@ -120,6 +127,9 @@ export default function ConfiguracoesAdmin() {
                                     </th>
                                     <th className='px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted'>
                                         Valor mínimo de pedido
+                                    </th>
+                                    <th className='px-3 py-2 text-right text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted'>
+                                        Desconto geral (%)
                                     </th>
                                     <th className='px-3 py-2' />
                                 </tr>
@@ -151,12 +161,34 @@ export default function ConfiguracoesAdmin() {
                                             </div>
                                         </td>
                                         <td className='px-3 py-2 text-right'>
+                                            <div className='flex items-center justify-end gap-2'>
+                                                <span className='text-xs text-gray-dark dark:text-dark-text-muted'>
+                                                    {c.desconto_percentual}% atual
+                                                </span>
+                                                <input
+                                                    type='number'
+                                                    min={0}
+                                                    max={100}
+                                                    step='0.1'
+                                                    value={descontos[c.codigo_vendedor] ?? ''}
+                                                    onChange={(e) =>
+                                                        setDescontos((prev) => ({
+                                                            ...prev,
+                                                            [c.codigo_vendedor]: e.target.value,
+                                                        }))
+                                                    }
+                                                    className='w-20 rounded-lg border border-gray-base/30 bg-white px-2 py-1.5 text-right text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                                                />
+                                            </div>
+                                        </td>
+                                        <td className='px-3 py-2 text-right'>
                                             <div className='flex justify-end gap-2'>
                                                 <button
                                                     type='button'
                                                     disabled={
                                                         salvando === c.codigo_vendedor ||
-                                                        Number(valores[c.codigo_vendedor]) === c.valor_minimo_pedido
+                                                        (Number(valores[c.codigo_vendedor]) === c.valor_minimo_pedido &&
+                                                            Number(descontos[c.codigo_vendedor]) === c.desconto_percentual)
                                                     }
                                                     onClick={() => salvar(c.codigo_vendedor)}
                                                     className='rounded-lg border border-orange-base px-2 py-1 text-xs font-semibold text-orange-base transition hover:bg-orange-base hover:text-white disabled:opacity-40'

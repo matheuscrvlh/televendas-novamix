@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs'
 import { connCiss } from '../database/ciss.database'
 import { querySupabase, withTransaction } from '../database/supabase.database'
 import { loadQuery } from '../services/query.service'
-import { getProdutosDoCatalogo, getProdutosPorCodigo } from '../services/catalogo.service'
+import { getProdutosPorCodigo } from '../services/produto.service'
 import { signClienteToken } from '../utils/jwt'
 
 const COOKIE_OPTIONS = {
@@ -154,17 +154,28 @@ export async function meCliente(req: FastifyRequest, res: FastifyReply) {
     res.send(clienteResumo(cliente))
 }
 
-export async function listCatalogosCliente(_req: FastifyRequest, res: FastifyReply) {
-    const catalogos = await querySupabase<{ id: string; nome: string }>(
-        'SELECT id, nome FROM televendas.catalogos ORDER BY nome'
+export async function listCategoriasCliente(_req: FastifyRequest, res: FastifyReply) {
+    const categorias = await querySupabase<{ id: string; nome: string }>(
+        'SELECT id, nome FROM televendas.categorias ORDER BY nome'
     )
-    res.send(catalogos)
-}
 
-export async function listProdutosCatalogoCliente(req: FastifyRequest, res: FastifyReply) {
-    const { catalogoId } = req.params as { catalogoId: string }
-    const produtos = await getProdutosDoCatalogo(catalogoId)
-    res.send(produtos.filter((p) => p.INATIVO !== 'T'))
+    const referencias = await querySupabase<{ produto_codigo: number; categoria_id: string }>(
+        'SELECT produto_codigo, categoria_id FROM televendas.produto_categorias'
+    )
+
+    const produtos = await getProdutosPorCodigo(referencias.map((r) => r.produto_codigo))
+    const produtosPorCodigo = new Map(produtos.map((p) => [p.CODIGO_PRODUTO, p]))
+
+    const categoriasComProdutos = categorias.map((categoria) => ({
+        id: categoria.id,
+        nome: categoria.nome,
+        produtos: referencias
+            .filter((r) => r.categoria_id === categoria.id)
+            .map((r) => produtosPorCodigo.get(r.produto_codigo))
+            .filter((p): p is (typeof produtos)[number] => p != null && p.INATIVO !== 'T'),
+    }))
+
+    res.send(categoriasComProdutos)
 }
 
 export async function criarPedido(req: FastifyRequest, res: FastifyReply) {

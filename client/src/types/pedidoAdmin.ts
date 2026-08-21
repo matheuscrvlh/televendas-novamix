@@ -50,4 +50,5 @@ export interface PedidoAdminDetalhe {
 export interface ConfigVendedor {
     codigo_vendedor: number
     valor_minimo_pedido: number
+    desconto_percentual: number
 }

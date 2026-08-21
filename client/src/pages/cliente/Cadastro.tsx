@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '../../components/Logo'
 import Footer from '../../components/Footer'
 import Spinner from '../../components/Spinner'
+import { MailIcon, LockIcon } from '../../components/icons'
 import { clienteApiPost } from '../../lib/clienteApi'
 import { ApiError } from '../../lib/api'
 
@@ -47,7 +48,7 @@ export default function ClienteCadastro() {
         'rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
 
     return (
-        <div className='flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-gray px-4 py-8 dark:bg-dark-bg'>
+        <div className='flex min-h-screen w-full flex-col items-center justify-center gap-6 bg-linear-to-b from-orange-base/10 via-gray to-gray px-4 py-8 dark:from-orange-base/5 dark:via-dark-bg dark:to-dark-bg'>
             <div className='w-full max-w-sm rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <Logo />
                 <h1 className='mb-1 text-center text-lg font-semibold text-gray-text dark:text-dark-text'>
@@ -66,14 +67,17 @@ export default function ClienteCadastro() {
                         onChange={(e) => setCnpjCpf(e.target.value)}
                         className={inputClass}
                     />
-                    <input
-                        type='email'
-                        required
-                        placeholder='E-mail'
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className={inputClass}
-                    />
+                    <div className='relative'>
+                        <MailIcon className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-dark dark:text-dark-text-muted' />
+                        <input
+                            type='email'
+                            required
+                            placeholder='E-mail'
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className={`${inputClass} w-full pl-9`}
+                        />
+                    </div>
                     <input
                         type='text'
                         placeholder='Telefone (opcional)'
@@ -81,23 +85,29 @@ export default function ClienteCadastro() {
                         onChange={(e) => setTelefone(e.target.value)}
                         className={inputClass}
                     />
-                    <input
-                        type='password'
-                        required
-                        minLength={6}
-                        placeholder='Senha (mín. 6 caracteres)'
-                        value={senha}
-                        onChange={(e) => setSenha(e.target.value)}
-                        className={inputClass}
-                    />
-                    <input
-                        type='password'
-                        required
-                        placeholder='Confirmar senha'
-                        value={confirmarSenha}
-                        onChange={(e) => setConfirmarSenha(e.target.value)}
-                        className={inputClass}
-                    />
+                    <div className='relative'>
+                        <LockIcon className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-dark dark:text-dark-text-muted' />
+                        <input
+                            type='password'
+                            required
+                            minLength={6}
+                            placeholder='Senha (mín. 6 caracteres)'
+                            value={senha}
+                            onChange={(e) => setSenha(e.target.value)}
+                            className={`${inputClass} w-full pl-9`}
+                        />
+                    </div>
+                    <div className='relative'>
+                        <LockIcon className='pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-dark dark:text-dark-text-muted' />
+                        <input
+                            type='password'
+                            required
+                            placeholder='Confirmar senha'
+                            value={confirmarSenha}
+                            onChange={(e) => setConfirmarSenha(e.target.value)}
+                            className={`${inputClass} w-full pl-9`}
+                        />
+                    </div>
 
                     {erro && <p className='text-sm text-red-base'>{erro}</p>}
 

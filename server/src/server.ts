@@ -2,13 +2,17 @@ import 'dotenv/config';
 import fastify from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import { meRoutes } from './routes/me.routes';
 import { televendasRoutes } from './routes/televendas.routes';
-import { catalogoRoutes } from './routes/catalogo.routes';
+import { categoriaRoutes } from './routes/categoria.routes';
 import { clienteRoutes } from './routes/cliente.routes';
 import { pedidoAdminRoutes } from './routes/pedidoAdmin.routes';
 import { configuracoesRoutes } from './routes/configuracoes.routes';
+import { bannerRoutes } from './routes/banner.routes';
 import { connCiss } from './database/ciss.database.ts';
+import { ensureUploadsRoot, UPLOADS_ROOT } from './services/upload.service';
 
 const app = fastify();
 
@@ -27,13 +31,18 @@ if(!process.env.SERVER_PORT) {
     throw new Error('Erro ao encontrar SUPABASE_DATABASE_URL no .env.')
 };
 
+ensureUploadsRoot();
+
 app.register(cookie);
+app.register(multipart);
+app.register(fastifyStatic, { root: UPLOADS_ROOT, prefix: '/uploads/' });
 app.register(meRoutes);
 app.register(televendasRoutes);
-app.register(catalogoRoutes);
+app.register(categoriaRoutes);
 app.register(clienteRoutes);
 app.register(pedidoAdminRoutes);
 app.register(configuracoesRoutes);
+app.register(bannerRoutes);
 
 async function start() {
     await app.listen({ host: '0.0.0.0', port: process.env.SERVER_PORT})

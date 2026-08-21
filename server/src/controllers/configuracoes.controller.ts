@@ -10,7 +10,7 @@ export async function listConfigVendedores(req: FastifyRequest, res: FastifyRepl
     if (!(await requireAdmin(req, res))) return
 
     const config = await querySupabase(
-        'SELECT codigo_vendedor, valor_minimo_pedido FROM televendas.config_vendedores ORDER BY codigo_vendedor'
+        'SELECT codigo_vendedor, valor_minimo_pedido, desconto_percentual FROM televendas.config_vendedores ORDER BY codigo_vendedor'
     )
     res.send(config)
 }
@@ -46,19 +46,26 @@ export async function updateConfigVendedor(req: FastifyRequest, res: FastifyRepl
     if (!(await requireAdmin(req, res))) return
 
     const { codigoVendedor } = req.params as ConfigVendedorParams
-    const { valorMinimoPedido } = req.body as { valorMinimoPedido?: number }
+    const { valorMinimoPedido, descontoPercentual } = req.body as {
+        valorMinimoPedido?: number
+        descontoPercentual?: number
+    }
 
     if (!Number.isFinite(valorMinimoPedido) || valorMinimoPedido! < 0) {
         res.code(400).send({ error: 'Informe um valor mínimo válido.' })
         return
     }
+    if (descontoPercentual !== undefined && (!Number.isFinite(descontoPercentual) || descontoPercentual < 0 || descontoPercentual > 100)) {
+        res.code(400).send({ error: 'O desconto geral precisa ser entre 0 e 100.' })
+        return
+    }
 
     const [config] = await querySupabase(
         `UPDATE televendas.config_vendedores
-         SET valor_minimo_pedido = $1, atualizado_em = now()
-         WHERE codigo_vendedor = $2
-         RETURNING codigo_vendedor, valor_minimo_pedido`,
-        [valorMinimoPedido, Number(codigoVendedor)]
+         SET valor_minimo_pedido = $1, desconto_percentual = COALESCE($2, desconto_percentual), atualizado_em = now()
+         WHERE codigo_vendedor = $3
+         RETURNING codigo_vendedor, valor_minimo_pedido, desconto_percentual`,
+        [valorMinimoPedido, descontoPercentual, Number(codigoVendedor)]
     )
 
     if (!config) {

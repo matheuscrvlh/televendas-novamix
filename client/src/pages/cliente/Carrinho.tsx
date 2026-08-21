@@ -49,7 +49,44 @@ export default function Carrinho() {
                 </p>
             ) : (
                 <div className='mt-6 flex flex-col gap-6'>
-                    <div className='overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface'>
+                    <div className='flex flex-col gap-3 sm:hidden'>
+                        {itens.map((item) => (
+                            <div
+                                key={item.codigoProduto}
+                                className='rounded-xl border border-gray-base/30 bg-white p-4 shadow-sm dark:border-dark-border dark:bg-dark-surface'
+                            >
+                                <div className='flex items-start justify-between gap-3'>
+                                    <p className='text-sm font-medium text-gray-text dark:text-dark-text'>
+                                        {item.descricao}
+                                    </p>
+                                    <button
+                                        type='button'
+                                        onClick={() => remover(item.codigoProduto)}
+                                        className='shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-red-base transition hover:bg-red-light/10'
+                                    >
+                                        Remover
+                                    </button>
+                                </div>
+                                <p className='mt-1 text-xs text-gray-dark dark:text-dark-text-muted'>
+                                    {formatCurrency(item.precoUnitario)} cada
+                                </p>
+                                <div className='mt-3 flex items-center justify-between gap-3 border-t border-gray-base/20 pt-3 dark:border-dark-border'>
+                                    <input
+                                        type='number'
+                                        min={1}
+                                        value={item.quantidade}
+                                        onChange={(e) => atualizarQuantidade(item.codigoProduto, Number(e.target.value))}
+                                        className='w-16 rounded-lg border border-gray-base/30 bg-white px-2 py-1 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                                    />
+                                    <span className='text-sm font-semibold tabular-nums text-gray-text dark:text-dark-text'>
+                                        {formatCurrency(item.precoUnitario * item.quantidade)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className='hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm sm:block dark:border-dark-border dark:bg-dark-surface'>
                         <table className='w-full min-w-max border-collapse text-sm'>
                             <thead>
                                 <tr className='border-b border-gray-base/30 dark:border-dark-border'>

@@ -1,9 +1,10 @@
 import { Route, Routes } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
-import CatalogoAdmin from './pages/admin/Catalogo'
+import CategoriasAdmin from './pages/admin/Categorias'
 import PedidosAdmin from './pages/admin/Pedidos'
 import PedidoDetalheAdmin from './pages/admin/PedidoDetalhe'
 import ConfiguracoesAdmin from './pages/admin/Configuracoes'
+import MarketingAdmin from './pages/admin/Marketing'
 import ClienteLogin from './pages/cliente/Login'
 import ClienteCadastro from './pages/cliente/Cadastro'
 import Loja from './pages/cliente/Loja'
@@ -23,10 +24,11 @@ export default function App() {
         <Route path='/pedidos/:pedidoId' element={<PedidoDetalhe />}/>
 
         <Route path='/dashboard' element={<Dashboard />}/>
-        <Route path='/dashboard/catalogo' element={<CatalogoAdmin />}/>
+        <Route path='/dashboard/categorias' element={<CategoriasAdmin />}/>
         <Route path='/dashboard/pedidos' element={<PedidosAdmin />}/>
         <Route path='/dashboard/pedidos/:pedidoId' element={<PedidoDetalheAdmin />}/>
         <Route path='/dashboard/configuracoes' element={<ConfiguracoesAdmin />}/>
+        <Route path='/dashboard/marketing' element={<MarketingAdmin />}/>
       </Routes>
     </>
   )

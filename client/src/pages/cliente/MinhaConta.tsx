@@ -5,7 +5,7 @@ import Spinner from '../../components/Spinner'
 import { useClienteMe } from '../../hooks/useClienteMe'
 import { clienteApiGet } from '../../lib/clienteApi'
 import { formatCurrency, formatDate } from '../../lib/format'
-import { pedidoStatusLabel } from '../../lib/pedidoStatus'
+import { pedidoStatusCor, pedidoStatusLabel } from '../../lib/pedidoStatus'
 import type { PedidoResumo } from '../../types/cliente'
 
 export default function MinhaConta() {
@@ -58,15 +58,17 @@ export default function MinhaConta() {
                         <Link
                             key={pedido.id}
                             to={`/pedidos/${pedido.id}`}
-                            className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-base/30 bg-white p-4 shadow-sm transition hover:border-orange-base dark:border-dark-border dark:bg-dark-surface'
+                            className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-base/30 bg-white p-4 shadow-sm transition hover:border-orange-base hover:shadow-md dark:border-dark-border dark:bg-dark-surface'
                         >
                             <div>
                                 <p className='text-sm font-medium text-gray-text dark:text-dark-text'>
                                     Pedido #{pedido.id.slice(0, 8).toUpperCase()} · {formatDate(pedido.criado_em.slice(0, 10))}
                                 </p>
-                                <p className='text-xs text-gray-dark dark:text-dark-text-muted'>
+                                <span
+                                    className={`mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-semibold ${pedidoStatusCor(pedido.status)}`}
+                                >
                                     {pedidoStatusLabel(pedido.status)}
-                                </p>
+                                </span>
                             </div>
                             <span className='text-sm font-semibold text-gray-text dark:text-dark-text'>
                                 {formatCurrency(pedido.valor_total)}

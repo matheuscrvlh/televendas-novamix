@@ -4,7 +4,7 @@ import ClienteShell from '../../components/cliente/ClienteShell'
 import Spinner from '../../components/Spinner'
 import { clienteApiGet } from '../../lib/clienteApi'
 import { formatCurrency, formatDate } from '../../lib/format'
-import { pedidoStatusLabel } from '../../lib/pedidoStatus'
+import { pedidoStatusCor, pedidoStatusDotCor, pedidoStatusLabel } from '../../lib/pedidoStatus'
 import type { PedidoDetalhe as PedidoDetalheType } from '../../types/cliente'
 
 export default function PedidoDetalhe() {
@@ -40,7 +40,7 @@ export default function PedidoDetalhe() {
                 <div className='mt-6 flex flex-col gap-6'>
                     <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                         <div className='flex flex-wrap items-center justify-between gap-3'>
-                            <span className='rounded-full bg-orange-base/10 px-3 py-1 text-sm font-semibold text-orange-base'>
+                            <span className={`rounded-full px-3 py-1 text-sm font-semibold ${pedidoStatusCor(pedido.status)}`}>
                                 {pedidoStatusLabel(pedido.status)}
                             </span>
                             <span className='text-lg font-semibold text-gray-text dark:text-dark-text'>
@@ -95,9 +95,12 @@ export default function PedidoDetalhe() {
                         <span className='text-sm font-medium text-gray-text dark:text-dark-text'>
                             Acompanhamento
                         </span>
-                        <ul className='mt-4 flex flex-col gap-3 border-l-2 border-orange-base/30 pl-4'>
+                        <ul className='mt-4 flex flex-col gap-4 border-l-2 border-orange-base/30 pl-4'>
                             {pedido.historico.map((h, i) => (
-                                <li key={i} className='text-sm'>
+                                <li key={i} className='relative text-sm'>
+                                    <span
+                                        className={`absolute -left-5.25 top-1 h-2.5 w-2.5 rounded-full ${pedidoStatusDotCor(h.status)}`}
+                                    />
                                     <p className='font-medium text-gray-text dark:text-dark-text'>
                                         {pedidoStatusLabel(h.status)}
                                     </p>

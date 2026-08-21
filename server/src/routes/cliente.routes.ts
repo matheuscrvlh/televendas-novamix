@@ -4,8 +4,7 @@ import {
     loginCliente,
     logoutCliente,
     meCliente,
-    listCatalogosCliente,
-    listProdutosCatalogoCliente,
+    listCategoriasCliente,
     criarPedido,
     listPedidosCliente,
     getPedidoCliente,
@@ -18,9 +17,8 @@ export function clienteRoutes(fastify) {
 
     fastify.get('/cliente/me', { preHandler: [authenticateCliente] }, meCliente)
 
-    // Catálogo é público, tipo vitrine de e-commerce — só o checkout exige login.
-    fastify.get('/cliente/catalogos', listCatalogosCliente)
-    fastify.get('/cliente/catalogos/:catalogoId/produtos', listProdutosCatalogoCliente)
+    // Vitrine é pública, tipo e-commerce — só o checkout exige login.
+    fastify.get('/cliente/categorias', listCategoriasCliente)
 
     fastify.post('/cliente/pedidos', { preHandler: [authenticateCliente] }, criarPedido)
     fastify.get('/cliente/pedidos', { preHandler: [authenticateCliente] }, listPedidosCliente)
