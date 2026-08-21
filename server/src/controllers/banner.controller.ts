@@ -30,14 +30,19 @@ export async function createBanner(req: FastifyRequest, res: FastifyReply) {
     let imagemMobile: string | null = null
     let link: string | null = null
 
-    for await (const part of req.parts()) {
-        if (part.type === 'file' && part.fieldname === 'imagem') {
-            imagem = await salvarArquivo('banners', part)
-        } else if (part.type === 'file' && part.fieldname === 'imagem_mobile') {
-            imagemMobile = await salvarArquivo('banners', part)
-        } else if (part.type === 'field' && part.fieldname === 'link') {
-            link = String(part.value ?? '').trim() || null
+    try {
+        for await (const part of req.parts()) {
+            if (part.type === 'file' && part.fieldname === 'imagem') {
+                imagem = await salvarArquivo('banners', part)
+            } else if (part.type === 'file' && part.fieldname === 'imagem_mobile') {
+                imagemMobile = await salvarArquivo('banners', part)
+            } else if (part.type === 'field' && part.fieldname === 'link') {
+                link = String(part.value ?? '').trim() || null
+            }
         }
+    } catch (err) {
+        res.code(413).send({ error: err instanceof Error ? err.message : 'Erro ao processar o upload.' })
+        return
     }
 
     if (!imagem) {

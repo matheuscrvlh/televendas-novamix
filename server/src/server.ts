@@ -34,7 +34,7 @@ if(!process.env.SERVER_PORT) {
 ensureUploadsRoot();
 
 app.register(cookie);
-app.register(multipart);
+app.register(multipart, { limits: { fileSize: 8 * 1024 * 1024 } });
 app.register(fastifyStatic, { root: UPLOADS_ROOT, prefix: '/uploads/' });
 app.register(meRoutes);
 app.register(televendasRoutes);

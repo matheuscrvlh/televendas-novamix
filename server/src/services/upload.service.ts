@@ -28,6 +28,13 @@ export async function salvarArquivo(pasta: string, arquivo: MultipartFile) {
     const nomeArquivo = `${Date.now()}-${crypto.randomUUID()}${extSegura}`
 
     const buffer = await arquivo.toBuffer()
+
+    // @fastify/multipart trunca o arquivo em silêncio quando passa do limite configurado
+    // (não lança erro sozinho) - sem essa checagem, salvaríamos uma imagem corrompida com 201 de sucesso.
+    if (arquivo.file.truncated) {
+        throw new Error('Arquivo maior que o limite permitido (8MB).')
+    }
+
     fs.writeFileSync(path.join(dir, nomeArquivo), buffer)
 
     return `/uploads/${pasta}/${nomeArquivo}`
