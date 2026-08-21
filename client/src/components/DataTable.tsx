@@ -1,10 +1,11 @@
+import type { ReactNode } from 'react'
 import Spinner from './Spinner'
 
 type Column<T> = {
     key: string
     label: string
     align?: 'left' | 'right'
-    render: (row: T) => string
+    render: (row: T) => ReactNode
     destaque?: (row: T) => boolean
 }
 

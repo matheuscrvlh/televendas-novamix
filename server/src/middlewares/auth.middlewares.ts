@@ -42,6 +42,20 @@ export async function checkPermission(req:FastifyRequest, res:FastifyReply) {
     return permission
 }
 
+const ADMIN_ACCESS = 'admin'
+
+export async function requireAdmin(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return false
+
+    if (permission !== ADMIN_ACCESS) {
+        res.code(403).send({ error: 'Apenas administradores podem acessar isso.' })
+        return false
+    }
+
+    return true
+}
+
 export async function checkBranch(req:FastifyRequest, res:FastifyReply) {
     const { branchs } = req.user
 

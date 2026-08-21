@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
+import { querySupabase } from '../database/supabase.database'
 import { loadQuery } from '../services/query.service'
 
 interface PeriodoQuery {
@@ -8,21 +9,20 @@ interface PeriodoQuery {
     fim?: string
 }
 
-/**
- * Códigos de vendedor que compõem o time de televendas. Fica no .env (TELEVENDAS_VENDEDORES,
- * separado por vírgula) pra não precisar mexer em código quando o time mudar - até existir
- * um admin que grave essa lista em algum lugar mais dinâmico.
- */
-function vendedores() {
-    return (process.env.TELEVENDAS_VENDEDORES ?? '')
-        .split(',')
-        .map((id) => parseInt(id.trim(), 10))
-        .filter((id) => !Number.isNaN(id))
+// Códigos de vendedor que compõem o time de televendas: cadastrados pelo admin em
+// Configurações (televendas.config_vendedores), não fica fixo no .env.
+async function vendedores() {
+    const config = await querySupabase<{ codigo_vendedor: number }>(
+        'SELECT codigo_vendedor FROM televendas.config_vendedores'
+    )
+    return config.map((c) => c.codigo_vendedor)
 }
 
-function sqlComVendedores(arquivo: string) {
-    const ids = vendedores()
-    return loadQuery('televendas', arquivo).replaceAll('{{VENDEDORES}}', ids.join(','))
+async function sqlComVendedores(arquivo: string) {
+    const ids = await vendedores()
+    // IN () é inválido no DB2 — sem vendedor configurado, usa um id impossível pra não dar erro.
+    const lista = ids.length > 0 ? ids.join(',') : '-1'
+    return loadQuery('televendas', arquivo).replaceAll('{{VENDEDORES}}', lista)
 }
 
 function resolvePeriodo(req: FastifyRequest, res: FastifyReply) {
@@ -43,8 +43,8 @@ export async function getVisaoGeral(req: FastifyRequest, res: FastifyReply) {
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const kpisSql = sqlComVendedores('kpis_periodo.sql')
-    const ativosSql = sqlComVendedores('clientes_ativos_total.sql')
+    const kpisSql = await sqlComVendedores('kpis_periodo.sql')
+    const ativosSql = await sqlComVendedores('clientes_ativos_total.sql')
 
     const conn = await connCiss()
     try {
@@ -65,7 +65,7 @@ export async function getClientes(req: FastifyRequest, res: FastifyReply) {
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const sql = sqlComVendedores('clientes_resumo.sql')
+    const sql = await sqlComVendedores('clientes_resumo.sql')
 
     const conn = await connCiss()
     try {
@@ -83,7 +83,7 @@ export async function getClientesSemComprar(req: FastifyRequest, res: FastifyRep
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const sql = sqlComVendedores('clientes_sem_comprar.sql')
+    const sql = await sqlComVendedores('clientes_sem_comprar.sql')
 
     const conn = await connCiss()
     try {
@@ -101,7 +101,7 @@ export async function getTopClientes(req: FastifyRequest, res: FastifyReply) {
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const sql = sqlComVendedores('top_clientes.sql')
+    const sql = await sqlComVendedores('top_clientes.sql')
 
     const conn = await connCiss()
     try {
@@ -119,7 +119,7 @@ export async function getTopProdutos(req: FastifyRequest, res: FastifyReply) {
     const periodo = resolvePeriodo(req, res)
     if (!periodo) return
 
-    const sql = sqlComVendedores('top_produtos.sql')
+    const sql = await sqlComVendedores('top_produtos.sql')
 
     const conn = await connCiss()
     try {

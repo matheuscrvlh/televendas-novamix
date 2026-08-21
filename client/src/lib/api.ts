@@ -17,10 +17,50 @@ export async function apiGet<T>(path: string, params?: Record<string, string>): 
     }
 
     const res = await fetch(url, { credentials: 'include' })
+    return handleResponse<T>(res)
+}
 
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        ...(body !== undefined
+            ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+            : {}),
+    })
+    return handleResponse<T>(res)
+}
+
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        ...(body !== undefined
+            ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+            : {}),
+    })
+    return handleResponse<T>(res)
+}
+
+export async function apiDelete<T>(path: string, body?: unknown): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        ...(body !== undefined
+            ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+            : {}),
+    })
+    return handleResponse<T>(res)
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
     if (res.status === 401) {
         window.location.href = 'https://hub.lojanovamix.com.br'
         throw new ApiError(401, 'Não autorizado')
+    }
+
+    if (res.status === 204) {
+        return undefined as T
     }
 
     const data = await res.json()

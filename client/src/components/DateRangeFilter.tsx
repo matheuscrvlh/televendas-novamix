@@ -22,7 +22,7 @@ export default function DateRangeFilter({ inicio, fim, onChangeInicio, onChangeF
     }
 
     return (
-        <div className='flex flex-wrap items-center gap-4'>
+        <div className='flex flex-wrap items-center gap-4 mb-5'>
             <div className='flex flex-wrap gap-2'>
                 {DATE_PRESETS.map(({ id, label }) => {
                     const presetRange = getPresetRange(id)

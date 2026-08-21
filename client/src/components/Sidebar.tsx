@@ -15,7 +15,11 @@ const linkInactiveClass =
     'text-gray-text hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
 const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-text-muted/40'
 
-const PAGINAS_ADMIN: { to: string; label: string }[] = []
+const PAGINAS_ADMIN: { to: string; label: string }[] = [
+    { to: '/dashboard/catalogo', label: 'Catálogo' },
+    { to: '/dashboard/pedidos', label: 'Pedidos' },
+    { to: '/dashboard/configuracoes', label: 'Configurações' },
+]
 
 export default function Sidebar({ isAdmin }: SidebarProps) {
     const [isOpen, setIsOpen] = useState(false)

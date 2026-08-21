@@ -4,6 +4,7 @@ import StatCard from '../components/StatCard'
 import ClientesPanel from '../components/ClientesPanel'
 import DataTable from '../components/DataTable'
 import DateRangeFilter from '../components/DateRangeFilter'
+import ProdutoThumbnail from '../components/ProdutoThumbnail'
 import { useMe } from '../hooks/useMe'
 import { useTelevendas } from '../hooks/useTelevendas'
 import { formatCurrency, formatNumber, formatPercent, formatDate } from '../lib/format'
@@ -92,7 +93,7 @@ export default function Dashboard() {
                             },
                             {
                                 key: 'dias',
-                                label: 'Dias sem comprar',
+                                label: 'Sem comprar',
                                 align: 'right',
                                 render: (r) => `${r.DIAS_SEM_COMPRAR}d`,
                                 destaque: (r) => r.DIAS_SEM_COMPRAR > 90,
@@ -129,7 +130,20 @@ export default function Dashboard() {
                             rows={(topProdutos.data ?? []).map((r, i) => ({ ...r, POSICAO: i + 1 }))}
                             columns={[
                                 { key: 'pos', label: '#', render: (r) => String(r.POSICAO) },
-                                { key: 'produto', label: 'Produto', render: (r) => r.PRODUTO },
+                                {
+                                    key: 'produto',
+                                    label: 'Produto',
+                                    render: (r) => (
+                                        <div className='flex items-center gap-2'>
+                                            <ProdutoThumbnail
+                                                codigoProduto={r.IDPRODUTO}
+                                                descricao={r.PRODUTO}
+                                                className='h-8 w-8'
+                                            />
+                                            <span>{r.PRODUTO}</span>
+                                        </div>
+                                    ),
+                                },
                                 { key: 'total', label: 'Total', align: 'right', render: (r) => formatCurrency(r.TOTAL) },
                             ]}
                         />
