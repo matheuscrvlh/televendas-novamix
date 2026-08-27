@@ -28,7 +28,7 @@ export default function BannerCarousel() {
     if (banners.length === 0) return null
 
     return (
-        <div className='relative w-full overflow-hidden bg-orange-base aspect-[425/495] md:aspect-[4/1]'>
+        <div className='relative w-full overflow-hidden bg-orange-base aspect-[425/495] md:aspect-1920/650'>
             {banners.map((banner, i) => {
                 const visivel = i === indice
                 const estilo: CSSProperties = {

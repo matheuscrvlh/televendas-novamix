@@ -1,28 +1,15 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
-import { querySupabase } from '../database/supabase.database'
-import { loadQuery } from '../services/query.service'
+import { sqlComVendedores as sqlComVendedoresBase } from '../services/vendedores.service'
 
 interface PeriodoQuery {
     inicio?: string
     fim?: string
 }
 
-// Códigos de vendedor que compõem o time de televendas: cadastrados pelo admin em
-// Configurações (televendas.config_vendedores), não fica fixo no .env.
-async function vendedores() {
-    const config = await querySupabase<{ codigo_vendedor: number }>(
-        'SELECT codigo_vendedor FROM televendas.config_vendedores'
-    )
-    return config.map((c) => c.codigo_vendedor)
-}
-
-async function sqlComVendedores(arquivo: string) {
-    const ids = await vendedores()
-    // IN () é inválido no DB2 — sem vendedor configurado, usa um id impossível pra não dar erro.
-    const lista = ids.length > 0 ? ids.join(',') : '-1'
-    return loadQuery('televendas', arquivo).replaceAll('{{VENDEDORES}}', lista)
+function sqlComVendedores(arquivo: string) {
+    return sqlComVendedoresBase('televendas', arquivo)
 }
 
 function resolvePeriodo(req: FastifyRequest, res: FastifyReply) {

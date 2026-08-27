@@ -14,6 +14,9 @@ interface CarrinhoContextValue {
     remover: (codigoProduto: number) => void
     limpar: () => void
     total: number
+    aberto: boolean
+    abrir: () => void
+    fechar: () => void
 }
 
 const CarrinhoContext = createContext<CarrinhoContextValue | null>(null)
@@ -31,6 +34,7 @@ function carregarInicial(): ItemCarrinho[] {
 
 export function CarrinhoProvider({ children }: { children: ReactNode }) {
     const [itens, setItens] = useState<ItemCarrinho[]>(carregarInicial)
+    const [aberto, setAberto] = useState(false)
 
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(itens))
@@ -66,8 +70,18 @@ export function CarrinhoProvider({ children }: { children: ReactNode }) {
 
     const total = itens.reduce((soma, item) => soma + item.precoUnitario * item.quantidade, 0)
 
+    function abrir() {
+        setAberto(true)
+    }
+
+    function fechar() {
+        setAberto(false)
+    }
+
     return (
-        <CarrinhoContext.Provider value={{ itens, adicionar, atualizarQuantidade, remover, limpar, total }}>
+        <CarrinhoContext.Provider
+            value={{ itens, adicionar, atualizarQuantidade, remover, limpar, total, aberto, abrir, fechar }}
+        >
             {children}
         </CarrinhoContext.Provider>
     )

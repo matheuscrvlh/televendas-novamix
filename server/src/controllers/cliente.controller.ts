@@ -4,7 +4,10 @@ import { connCiss } from '../database/ciss.database'
 import { querySupabase, withTransaction } from '../database/supabase.database'
 import { loadQuery } from '../services/query.service'
 import { getProdutosPorCodigo } from '../services/produto.service'
+import { sqlComVendedores } from '../services/vendedores.service'
 import { signClienteToken } from '../utils/jwt'
+
+const QTD_MAIS_VENDIDOS = 12
 
 const COOKIE_OPTIONS = {
     httpOnly: true,
@@ -155,12 +158,23 @@ export async function meCliente(req: FastifyRequest, res: FastifyReply) {
 }
 
 export async function listCategoriasCliente(_req: FastifyRequest, res: FastifyReply) {
-    const categorias = await querySupabase<{ id: string; nome: string }>(
-        'SELECT id, nome FROM televendas.categorias ORDER BY nome'
+    const categorias = await querySupabase<{
+        id: string
+        nome: string
+        imagem: string | null
+        destaque_home: boolean
+        ordem_home: number
+    }>(
+        'SELECT id, nome, imagem, destaque_home, ordem_home FROM televendas.categorias WHERE ativo = true ORDER BY nome'
     )
 
+    // Só entra na vitrine o vínculo cujo produto está marcado como ativo em televendas.produtos
+    // (inativar não apaga a categorização, só esconde da loja).
     const referencias = await querySupabase<{ produto_codigo: number; categoria_id: string }>(
-        'SELECT produto_codigo, categoria_id FROM televendas.produto_categorias'
+        `SELECT pc.produto_codigo, pc.categoria_id
+         FROM televendas.produto_categorias pc
+         JOIN televendas.produtos p ON p.codigo_produto_ciss = pc.produto_codigo
+         WHERE p.ativo = true`
     )
 
     const produtos = await getProdutosPorCodigo(referencias.map((r) => r.produto_codigo))
@@ -169,6 +183,9 @@ export async function listCategoriasCliente(_req: FastifyRequest, res: FastifyRe
     const categoriasComProdutos = categorias.map((categoria) => ({
         id: categoria.id,
         nome: categoria.nome,
+        imagem: categoria.imagem,
+        destaqueHome: categoria.destaque_home,
+        ordemHome: categoria.ordem_home,
         produtos: referencias
             .filter((r) => r.categoria_id === categoria.id)
             .map((r) => produtosPorCodigo.get(r.produto_codigo))
@@ -176,6 +193,88 @@ export async function listCategoriasCliente(_req: FastifyRequest, res: FastifyRe
     }))
 
     res.send(categoriasComProdutos)
+}
+
+export async function listOfertasCliente(_req: FastifyRequest, res: FastifyReply) {
+    const registros = await querySupabase<{ codigo_produto_ciss: number }>(
+        'SELECT codigo_produto_ciss FROM televendas.produtos WHERE preco_promocional IS NOT NULL AND ativo = true'
+    )
+
+    const produtos = await getProdutosPorCodigo(registros.map((r) => r.codigo_produto_ciss))
+    const ofertas = produtos
+        .filter((p) => p.INATIVO !== 'T' && p.PRECO != null && p.ESTOQUE > 0)
+        .slice(0, QTD_MAIS_VENDIDOS)
+
+    res.send(ofertas)
+}
+
+export async function listFavoritosCliente(req: FastifyRequest, res: FastifyReply) {
+    const favoritos = await querySupabase<{ codigo_produto: number }>(
+        'SELECT codigo_produto FROM televendas.favoritos WHERE cliente_id = $1 ORDER BY criado_em DESC',
+        [req.cliente.clienteId]
+    )
+
+    const produtos = await getProdutosPorCodigo(favoritos.map((f) => f.codigo_produto))
+    const produtosPorCodigo = new Map(produtos.map((p) => [p.CODIGO_PRODUTO, p]))
+
+    // Mantém a ordem de "favoritado mais recente primeiro" e não esconde esgotado/promo vencida —
+    // o cliente favoritou de propósito, só produto excluído do CISS mesmo é que some da lista.
+    const favoritosResolvidos = favoritos
+        .map((f) => produtosPorCodigo.get(f.codigo_produto))
+        .filter((p): p is (typeof produtos)[number] => p != null)
+
+    res.send(favoritosResolvidos)
+}
+
+export async function alternarFavoritoCliente(req: FastifyRequest, res: FastifyReply) {
+    const { codigoProduto } = req.params as { codigoProduto: string }
+    const codigo = Number(codigoProduto)
+
+    if (!Number.isInteger(codigo)) {
+        res.code(400).send({ error: 'Código de produto inválido.' })
+        return
+    }
+
+    const [existente] = await querySupabase<{ id: string }>(
+        'SELECT id FROM televendas.favoritos WHERE cliente_id = $1 AND codigo_produto = $2',
+        [req.cliente.clienteId, codigo]
+    )
+
+    if (existente) {
+        await querySupabase('DELETE FROM televendas.favoritos WHERE id = $1', [existente.id])
+        res.send({ favorito: false })
+        return
+    }
+
+    await querySupabase(
+        'INSERT INTO televendas.favoritos (cliente_id, codigo_produto) VALUES ($1, $2)',
+        [req.cliente.clienteId, codigo]
+    )
+    res.send({ favorito: true })
+}
+
+export async function listMaisVendidosCliente(_req: FastifyRequest, res: FastifyReply) {
+    const sql = await sqlComVendedores('produto', 'mais_vendidos.sql')
+
+    const conn = await connCiss()
+    let ranking: { CODIGO_PRODUTO: number }[]
+    try {
+        ranking = await conn.query(sql)
+    } finally {
+        await conn.close()
+    }
+
+    // A query CISS já vem ordenada por venda — o WHERE IN do getProdutosPorCodigo não
+    // preserva ordem, então a gente reaplica pelo array de ranking.
+    const produtos = await getProdutosPorCodigo(ranking.map((r) => r.CODIGO_PRODUTO))
+    const produtosPorCodigo = new Map(produtos.map((p) => [p.CODIGO_PRODUTO, p]))
+
+    const maisVendidos = ranking
+        .map((r) => produtosPorCodigo.get(r.CODIGO_PRODUTO))
+        .filter((p): p is (typeof produtos)[number] => p != null && p.INATIVO !== 'T' && p.PRECO != null && p.ESTOQUE > 0)
+        .slice(0, QTD_MAIS_VENDIDOS)
+
+    res.send(maisVendidos)
 }
 
 export async function criarPedido(req: FastifyRequest, res: FastifyReply) {

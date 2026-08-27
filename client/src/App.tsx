@@ -8,7 +8,7 @@ import MarketingAdmin from './pages/admin/Marketing'
 import ClienteLogin from './pages/cliente/Login'
 import ClienteCadastro from './pages/cliente/Cadastro'
 import Loja from './pages/cliente/Loja'
-import Carrinho from './pages/cliente/Carrinho'
+import Favoritos from './pages/cliente/Favoritos'
 import MinhaConta from './pages/cliente/MinhaConta'
 import PedidoDetalhe from './pages/cliente/PedidoDetalhe'
 
@@ -19,7 +19,7 @@ export default function App() {
         <Route path='/' element={<Loja />}/>
         <Route path='/entrar' element={<ClienteLogin />}/>
         <Route path='/cadastro' element={<ClienteCadastro />}/>
-        <Route path='/carrinho' element={<Carrinho />}/>
+        <Route path='/favoritos' element={<Favoritos />}/>
         <Route path='/conta' element={<MinhaConta />}/>
         <Route path='/pedidos/:pedidoId' element={<PedidoDetalhe />}/>
 

@@ -16,7 +16,7 @@ const linkInactiveClass =
 const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-text-muted/40'
 
 const PAGINAS_ADMIN: { to: string; label: string }[] = [
-    { to: '/dashboard/categorias', label: 'Categorias' },
+    { to: '/dashboard/categorias', label: 'Categorias e Produtos' },
     { to: '/dashboard/pedidos', label: 'Pedidos' },
     { to: '/dashboard/marketing', label: 'Marketing' },
     { to: '/dashboard/configuracoes', label: 'Configurações' },

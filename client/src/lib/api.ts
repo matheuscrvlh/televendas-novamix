@@ -40,6 +40,15 @@ export async function apiPostForm<T>(path: string, formData: FormData): Promise<
     return handleResponse<T>(res)
 }
 
+export async function apiPatchForm<T>(path: string, formData: FormData): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        body: formData,
+    })
+    return handleResponse<T>(res)
+}
+
 export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
     const res = await fetch(`${API_URL}${path}`, {
         method: 'PATCH',

@@ -5,6 +5,10 @@ import {
     logoutCliente,
     meCliente,
     listCategoriasCliente,
+    listMaisVendidosCliente,
+    listOfertasCliente,
+    listFavoritosCliente,
+    alternarFavoritoCliente,
     criarPedido,
     listPedidosCliente,
     getPedidoCliente,
@@ -19,6 +23,11 @@ export function clienteRoutes(fastify) {
 
     // Vitrine é pública, tipo e-commerce — só o checkout exige login.
     fastify.get('/cliente/categorias', listCategoriasCliente)
+    fastify.get('/cliente/produtos/mais-vendidos', listMaisVendidosCliente)
+    fastify.get('/cliente/produtos/ofertas', listOfertasCliente)
+
+    fastify.get('/cliente/favoritos', { preHandler: [authenticateCliente] }, listFavoritosCliente)
+    fastify.post('/cliente/favoritos/:codigoProduto', { preHandler: [authenticateCliente] }, alternarFavoritoCliente)
 
     fastify.post('/cliente/pedidos', { preHandler: [authenticateCliente] }, criarPedido)
     fastify.get('/cliente/pedidos', { preHandler: [authenticateCliente] }, listPedidosCliente)

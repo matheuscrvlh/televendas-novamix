@@ -52,7 +52,28 @@ export default function PedidoDetalhe() {
                         )}
                     </div>
 
-                    <div className='overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface'>
+                    <div className='flex flex-col gap-3 sm:hidden'>
+                        {pedido.itens.map((item) => (
+                            <div
+                                key={item.codigo_produto}
+                                className='rounded-xl border border-gray-base/30 bg-white p-4 shadow-sm dark:border-dark-border dark:bg-dark-surface'
+                            >
+                                <p className='text-sm font-medium text-gray-text dark:text-dark-text'>
+                                    {item.descricao_produto}
+                                </p>
+                                <div className='mt-2 flex items-center justify-between text-sm'>
+                                    <span className='text-gray-dark dark:text-dark-text-muted'>
+                                        {item.quantidade} × {formatCurrency(item.preco_unitario)}
+                                    </span>
+                                    <span className='font-semibold tabular-nums text-gray-text dark:text-dark-text'>
+                                        {formatCurrency(item.preco_unitario * item.quantidade)}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className='hidden overflow-x-auto rounded-xl border border-gray-base/30 bg-white shadow-sm sm:block dark:border-dark-border dark:bg-dark-surface'>
                         <table className='w-full min-w-max border-collapse text-sm'>
                             <thead>
                                 <tr className='border-b border-gray-base/30 dark:border-dark-border'>

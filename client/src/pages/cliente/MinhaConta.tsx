@@ -27,9 +27,9 @@ export default function MinhaConta() {
             <h1 className='text-2xl font-semibold text-gray-text dark:text-dark-text'>Minha conta</h1>
 
             {cliente && (
-                <div className='mt-6 rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
-                    <p className='text-sm font-medium text-gray-text dark:text-dark-text'>{cliente.razaoSocial}</p>
-                    <p className='mt-1 text-sm text-gray-dark dark:text-dark-text-muted'>{cliente.email}</p>
+                <div className='mt-6 min-w-0 rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
+                    <p className='wrap-break-word text-sm font-medium text-gray-text dark:text-dark-text'>{cliente.razaoSocial}</p>
+                    <p className='mt-1 break-all text-sm text-gray-dark dark:text-dark-text-muted'>{cliente.email}</p>
                     {cliente.telefone && (
                         <p className='text-sm text-gray-dark dark:text-dark-text-muted'>{cliente.telefone}</p>
                     )}

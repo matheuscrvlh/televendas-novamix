@@ -7,9 +7,12 @@ interface BannerParams {
     id: string
 }
 
-export async function listBanners(_req: FastifyRequest, res: FastifyReply) {
+export async function listBanners(req: FastifyRequest, res: FastifyReply) {
+    const { posicao } = req.query as { posicao?: string }
+
     const banners = await querySupabase(
-        'SELECT id, imagem, imagem_mobile, link, ordem, ativo FROM televendas.banners WHERE ativo = true ORDER BY ordem'
+        'SELECT id, imagem, imagem_mobile, link, ordem, ativo, posicao FROM televendas.banners WHERE ativo = true AND posicao = $1 ORDER BY ordem',
+        [posicao ?? 'hero']
     )
     res.send(banners)
 }
@@ -17,8 +20,11 @@ export async function listBanners(_req: FastifyRequest, res: FastifyReply) {
 export async function listBannersAdmin(req: FastifyRequest, res: FastifyReply) {
     if (!(await requireAdmin(req, res))) return
 
+    const { posicao } = req.query as { posicao?: string }
+
     const banners = await querySupabase(
-        'SELECT id, imagem, imagem_mobile, link, ordem, ativo FROM televendas.banners ORDER BY ordem'
+        'SELECT id, imagem, imagem_mobile, link, ordem, ativo, posicao FROM televendas.banners WHERE posicao = $1 ORDER BY ordem',
+        [posicao ?? 'hero']
     )
     res.send(banners)
 }
@@ -29,6 +35,7 @@ export async function createBanner(req: FastifyRequest, res: FastifyReply) {
     let imagem: string | null = null
     let imagemMobile: string | null = null
     let link: string | null = null
+    let posicao = 'hero'
 
     try {
         for await (const part of req.parts()) {
@@ -38,6 +45,8 @@ export async function createBanner(req: FastifyRequest, res: FastifyReply) {
                 imagemMobile = await salvarArquivo('banners', part)
             } else if (part.type === 'field' && part.fieldname === 'link') {
                 link = String(part.value ?? '').trim() || null
+            } else if (part.type === 'field' && part.fieldname === 'posicao') {
+                posicao = String(part.value ?? '').trim() || 'hero'
             }
         }
     } catch (err) {
@@ -50,15 +59,21 @@ export async function createBanner(req: FastifyRequest, res: FastifyReply) {
         return
     }
 
+    if (posicao !== 'hero' && posicao !== 'secao') {
+        res.code(400).send({ error: 'Posição de banner inválida.' })
+        return
+    }
+
     const [{ proximaOrdem }] = await querySupabase<{ proximaOrdem: number }>(
-        'SELECT COALESCE(MAX(ordem), -1) + 1 AS "proximaOrdem" FROM televendas.banners'
+        'SELECT COALESCE(MAX(ordem), -1) + 1 AS "proximaOrdem" FROM televendas.banners WHERE posicao = $1',
+        [posicao]
     )
 
     const [banner] = await querySupabase(
-        `INSERT INTO televendas.banners (imagem, imagem_mobile, link, ordem)
-         VALUES ($1, $2, $3, $4)
-         RETURNING id, imagem, imagem_mobile, link, ordem, ativo`,
-        [imagem, imagemMobile, link, proximaOrdem]
+        `INSERT INTO televendas.banners (imagem, imagem_mobile, link, ordem, posicao)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, imagem, imagem_mobile, link, ordem, ativo, posicao`,
+        [imagem, imagemMobile, link, proximaOrdem, posicao]
     )
     res.code(201).send(banner)
 }
@@ -75,7 +90,7 @@ export async function updateBanner(req: FastifyRequest, res: FastifyReply) {
              ordem = COALESCE($2, ordem),
              ativo = COALESCE($3, ativo)
          WHERE id = $4
-         RETURNING id, imagem, imagem_mobile, link, ordem, ativo`,
+         RETURNING id, imagem, imagem_mobile, link, ordem, ativo, posicao`,
         [link, ordem, ativo, id]
     )
 

@@ -1,22 +1,144 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import PageShell from '../../components/PageShell'
 import Spinner from '../../components/Spinner'
 import ProdutoThumbnail from '../../components/ProdutoThumbnail'
-import { CloseIcon } from '../../components/icons'
+import { CloseIcon, ImageIcon, TrashIcon } from '../../components/icons'
 import { useMe } from '../../hooks/useMe'
-import { apiGet, apiPost, apiPatch, apiDelete, ApiError } from '../../lib/api'
+import { apiGet, apiPost, apiPatch, apiPatchForm, apiDelete, ApiError } from '../../lib/api'
 import { formatCurrency } from '../../lib/format'
+import { uploadImagemUrl } from '../../lib/imagens'
 import type { Categoria, ProdutoBusca, ProdutoRegistrado } from '../../types/categoria'
+
+type CategoriaRowProps = {
+    categoria: Categoria
+    enviandoImagem: boolean
+    onEnviarImagem: (e: ChangeEvent<HTMLInputElement>) => void
+    onRenomear: (nome: string) => void
+    onAlternarAtivo: () => void
+    onAlternarDestaque: () => void
+    onRemover: () => void
+}
+
+function CategoriaRow({
+    categoria,
+    enviandoImagem,
+    onEnviarImagem,
+    onRenomear,
+    onAlternarAtivo,
+    onAlternarDestaque,
+    onRemover,
+}: CategoriaRowProps) {
+    const [editando, setEditando] = useState(false)
+    const [nome, setNome] = useState(categoria.nome)
+
+    function salvar() {
+        if (!nome.trim()) return
+        onRenomear(nome.trim())
+        setEditando(false)
+    }
+
+    return (
+        <div className='flex flex-wrap items-center gap-3 rounded-xl border border-gray-base/20 bg-white p-3 shadow-sm dark:border-dark-border dark:bg-dark-surface-2'>
+            <label
+                className='relative flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-gray ring-1 ring-gray-base/30 dark:bg-dark-surface'
+                title='Trocar imagem da categoria'
+            >
+                {enviandoImagem ? (
+                    <Spinner className='h-4 w-4' />
+                ) : categoria.imagem ? (
+                    <img src={uploadImagemUrl(categoria.imagem)} alt='' className='h-full w-full object-cover' />
+                ) : (
+                    <ImageIcon className='h-4 w-4 text-gray-dark/50 dark:text-dark-text-muted/50' />
+                )}
+                <input type='file' accept='image/*' className='hidden' onChange={onEnviarImagem} />
+            </label>
+
+            <div className='min-w-0 flex-1'>
+                {editando ? (
+                    <div className='flex items-center gap-2'>
+                        <input
+                            type='text'
+                            value={nome}
+                            onChange={(e) => setNome(e.target.value)}
+                            autoFocus
+                            className='min-w-0 flex-1 rounded-md border border-gray-base/30 px-2 py-1 text-sm text-gray-text outline-none focus:border-orange-base dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                        />
+                        <button
+                            type='button'
+                            onClick={salvar}
+                            className='shrink-0 rounded-md bg-orange-base px-2 py-1 text-xs font-semibold text-white transition hover:bg-orange-light'
+                        >
+                            Salvar
+                        </button>
+                        <button
+                            type='button'
+                            onClick={() => {
+                                setNome(categoria.nome)
+                                setEditando(false)
+                            }}
+                            className='shrink-0 text-xs text-gray-dark transition hover:text-gray-text dark:text-dark-text-muted'
+                        >
+                            Cancelar
+                        </button>
+                    </div>
+                ) : (
+                    <button type='button' onClick={() => setEditando(true)} className='text-left'>
+                        <span className='text-sm font-medium text-gray-text transition hover:text-orange-base dark:text-dark-text'>
+                            {categoria.nome}
+                        </span>
+                    </button>
+                )}
+            </div>
+
+            <button
+                type='button'
+                onClick={onAlternarAtivo}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    categoria.ativo
+                        ? 'bg-green-base/10 text-green-base hover:bg-green-base/20'
+                        : 'bg-gray-base/10 text-gray-dark hover:bg-gray-base/20 dark:text-dark-text-muted'
+                }`}
+            >
+                {categoria.ativo ? 'Ativo' : 'Inativo'}
+            </button>
+
+            <button
+                type='button'
+                onClick={onAlternarDestaque}
+                title='Mostrar como seção com carrossel próprio na home'
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    categoria.destaque_home
+                        ? 'bg-blue-base/10 text-blue-base hover:bg-blue-base/20'
+                        : 'bg-gray-base/10 text-gray-dark hover:bg-gray-base/20 dark:text-dark-text-muted'
+                }`}
+            >
+                {categoria.destaque_home ? 'Na home' : 'Fora da home'}
+            </button>
+
+            <button
+                type='button'
+                onClick={onRemover}
+                className='flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-base/10 text-red-base transition hover:bg-red-base hover:text-white'
+                aria-label={`Excluir categoria ${categoria.nome}`}
+            >
+                <TrashIcon className='h-4 w-4' />
+            </button>
+        </div>
+    )
+}
 
 export default function CategoriasAdmin() {
     const { me, loading: loadingMe, error: meError } = useMe()
     const autorizado = me?.isAdmin ?? false
+
+    const [aba, setAba] = useState<'produtos' | 'categorias'>('produtos')
 
     const [categorias, setCategorias] = useState<Categoria[]>([])
     const [loadingCategorias, setLoadingCategorias] = useState(true)
     const [erroCategorias, setErroCategorias] = useState<string | null>(null)
     const [novaCategoria, setNovaCategoria] = useState('')
     const [criandoCategoria, setCriandoCategoria] = useState(false)
+    const [enviandoImagemId, setEnviandoImagemId] = useState<string | null>(null)
 
     const [produtos, setProdutos] = useState<ProdutoRegistrado[]>([])
     const [loadingProdutos, setLoadingProdutos] = useState(true)
@@ -76,6 +198,83 @@ export default function CategoriasAdmin() {
         await apiDelete(`/categorias/${id}`)
         setCategorias((prev) => prev.filter((c) => c.id !== id))
         carregarProdutos()
+    }
+
+    async function renomearCategoria(id: string, nome: string) {
+        try {
+            const categoria = await apiPatch<Categoria>(`/categorias/${id}`, { nome })
+            setCategorias((prev) =>
+                prev.map((c) => (c.id === id ? categoria : c)).sort((a, b) => a.nome.localeCompare(b.nome))
+            )
+        } catch (err) {
+            setErroCategorias(err instanceof ApiError ? err.message : 'Erro ao renomear categoria.')
+        }
+    }
+
+    async function alternarAtivoCategoria(categoria: Categoria) {
+        try {
+            const atualizada = await apiPatch<Categoria>(`/categorias/${categoria.id}`, { ativo: !categoria.ativo })
+            setCategorias((prev) => prev.map((c) => (c.id === categoria.id ? atualizada : c)))
+        } catch (err) {
+            setErroCategorias(err instanceof ApiError ? err.message : 'Erro ao atualizar categoria.')
+        }
+    }
+
+    async function alternarDestaqueCategoria(categoria: Categoria) {
+        try {
+            const novoValor = !categoria.destaque_home
+            const proximaOrdem = novoValor
+                ? Math.max(0, ...categorias.filter((c) => c.destaque_home).map((c) => c.ordem_home)) + 1
+                : categoria.ordem_home
+
+            const atualizada = await apiPatch<Categoria>(`/categorias/${categoria.id}`, {
+                destaqueHome: novoValor,
+                ordemHome: proximaOrdem,
+            })
+            setCategorias((prev) => prev.map((c) => (c.id === categoria.id ? atualizada : c)))
+        } catch (err) {
+            setErroCategorias(err instanceof ApiError ? err.message : 'Erro ao atualizar categoria.')
+        }
+    }
+
+    async function moverDestaque(index: number, direcao: -1 | 1) {
+        const destaque = categorias.filter((c) => c.destaque_home).sort((a, b) => a.ordem_home - b.ordem_home)
+        const alvo = index + direcao
+        if (alvo < 0 || alvo >= destaque.length) return
+
+        const anterior = categorias
+        const proximos = [...destaque]
+        ;[proximos[index], proximos[alvo]] = [proximos[alvo], proximos[index]]
+        const atualizados = proximos.map((c, i) => ({ ...c, ordem_home: i }))
+        setCategorias((prev) => prev.map((c) => atualizados.find((a) => a.id === c.id) ?? c))
+
+        try {
+            await Promise.all([
+                apiPatch(`/categorias/${atualizados[index].id}`, { ordemHome: atualizados[index].ordem_home }),
+                apiPatch(`/categorias/${atualizados[alvo].id}`, { ordemHome: atualizados[alvo].ordem_home }),
+            ])
+        } catch {
+            setCategorias(anterior)
+            setErroCategorias('Erro ao reordenar seções em destaque.')
+        }
+    }
+
+    async function enviarImagemCategoria(id: string, e: ChangeEvent<HTMLInputElement>) {
+        const arquivo = e.target.files?.[0]
+        e.target.value = ''
+        if (!arquivo) return
+
+        setEnviandoImagemId(id)
+        try {
+            const fd = new FormData()
+            fd.append('imagem', arquivo)
+            const categoria = await apiPatchForm<Categoria>(`/categorias/${id}/imagem`, fd)
+            setCategorias((prev) => prev.map((c) => (c.id === id ? categoria : c)))
+        } catch (err) {
+            setErroCategorias(err instanceof ApiError ? err.message : 'Erro ao enviar imagem da categoria.')
+        } finally {
+            setEnviandoImagemId(null)
+        }
     }
 
     async function buscarProdutos(e: FormEvent) {
@@ -142,6 +341,18 @@ export default function CategoriasAdmin() {
         carregarProdutos()
     }
 
+    async function alternarAtivoProduto(produto: ProdutoRegistrado) {
+        setSalvandoCodigo(produto.codigo_produto_ciss)
+        try {
+            await apiPatch(`/produtos/${produto.codigo_produto_ciss}`, { ativo: !produto.ativo })
+            carregarProdutos()
+        } catch (err) {
+            setErroProdutos(err instanceof ApiError ? err.message : 'Erro ao atualizar produto.')
+        } finally {
+            setSalvandoCodigo(null)
+        }
+    }
+
     async function salvarPrecoPromocional(codigo: number) {
         const valor = precosEmEdicao[codigo]
         setSalvandoCodigo(codigo)
@@ -175,10 +386,79 @@ export default function CategoriasAdmin() {
             loadingMe={loadingMe}
             meError={meError}
             autorizado={autorizado}
-            tituloAcessoRestrito='Categorias é uma área restrita a administradores.'
-            titulo='Categorias'
-            subtitulo='Cadastre produtos e diga em quais categorias eles aparecem na loja - um produto pode estar em mais de uma.'
+            tituloAcessoRestrito='Categorias e Produtos é uma área restrita a administradores.'
+            titulo='Categorias e Produtos'
+            subtitulo='Cadastre categorias e produtos, e diga em quais categorias cada produto aparece na loja.'
         >
+            <div className='flex gap-2'>
+                <button
+                    type='button'
+                    onClick={() => setAba('produtos')}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                        aba === 'produtos'
+                            ? 'bg-orange-base text-white'
+                            : 'bg-white text-gray-text hover:bg-orange-base/10 dark:bg-dark-surface dark:text-dark-text'
+                    }`}
+                >
+                    Produtos
+                </button>
+                <button
+                    type='button'
+                    onClick={() => setAba('categorias')}
+                    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                        aba === 'categorias'
+                            ? 'bg-orange-base text-white'
+                            : 'bg-white text-gray-text hover:bg-orange-base/10 dark:bg-dark-surface dark:text-dark-text'
+                    }`}
+                >
+                    Categorias
+                </button>
+            </div>
+
+            {aba === 'categorias' && (
+            <div className='mt-6 flex flex-col gap-6'>
+            {categorias.filter((c) => c.destaque_home).length > 0 && (
+                <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
+                    <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Seções em destaque na home</span>
+                    <p className='mt-1 text-xs text-gray-dark dark:text-dark-text-muted'>
+                        Cada uma vira um carrossel de produtos próprio na home, nessa ordem.
+                    </p>
+                    <div className='mt-3 flex flex-col gap-2'>
+                        {categorias
+                            .filter((c) => c.destaque_home)
+                            .sort((a, b) => a.ordem_home - b.ordem_home)
+                            .map((categoria, i, destaque) => (
+                                <div
+                                    key={categoria.id}
+                                    className='flex items-center gap-3 rounded-lg border border-gray-base/20 px-3 py-2 dark:border-dark-border'
+                                >
+                                    <span className='flex-1 text-sm text-gray-text dark:text-dark-text'>{categoria.nome}</span>
+                                    <div className='flex gap-1'>
+                                        <button
+                                            type='button'
+                                            disabled={i === 0}
+                                            onClick={() => moverDestaque(i, -1)}
+                                            className='flex h-7 w-7 items-center justify-center rounded-md text-gray-text transition hover:bg-gray disabled:opacity-25 dark:text-dark-text dark:hover:bg-dark-surface-2'
+                                            aria-label='Mover pra cima'
+                                        >
+                                            ↑
+                                        </button>
+                                        <button
+                                            type='button'
+                                            disabled={i === destaque.length - 1}
+                                            onClick={() => moverDestaque(i, 1)}
+                                            className='flex h-7 w-7 items-center justify-center rounded-md text-gray-text transition hover:bg-gray disabled:opacity-25 dark:text-dark-text dark:hover:bg-dark-surface-2'
+                                            aria-label='Mover pra baixo'
+                                        >
+                                            ↓
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+                </div>
+            )}
+
             <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Categorias</span>
 
@@ -189,27 +469,23 @@ export default function CategoriasAdmin() {
                         <Spinner className='h-5 w-5' />
                     </div>
                 ) : (
-                    <div className='mt-3 flex flex-wrap gap-2'>
+                    <div className='mt-3 flex flex-col gap-2'>
                         {categorias.length === 0 && (
                             <span className='text-sm text-gray-dark dark:text-dark-text-muted'>
                                 Nenhuma categoria criada ainda.
                             </span>
                         )}
                         {categorias.map((categoria) => (
-                            <span
+                            <CategoriaRow
                                 key={categoria.id}
-                                className='flex items-center gap-1.5 rounded-full bg-orange-base/10 py-1 pl-3 pr-1.5 text-sm font-medium text-orange-base'
-                            >
-                                {categoria.nome}
-                                <button
-                                    type='button'
-                                    onClick={() => removerCategoria(categoria.id)}
-                                    className='rounded-full p-0.5 transition hover:bg-orange-base/20'
-                                    aria-label={`Remover categoria ${categoria.nome}`}
-                                >
-                                    <CloseIcon className='h-3 w-3' />
-                                </button>
-                            </span>
+                                categoria={categoria}
+                                enviandoImagem={enviandoImagemId === categoria.id}
+                                onEnviarImagem={(e) => enviarImagemCategoria(categoria.id, e)}
+                                onRenomear={(nome) => renomearCategoria(categoria.id, nome)}
+                                onAlternarAtivo={() => alternarAtivoCategoria(categoria)}
+                                onAlternarDestaque={() => alternarDestaqueCategoria(categoria)}
+                                onRemover={() => removerCategoria(categoria.id)}
+                            />
                         ))}
                     </div>
                 )}
@@ -231,8 +507,12 @@ export default function CategoriasAdmin() {
                     </button>
                 </form>
             </div>
+            </div>
+            )}
 
-            <div className='mt-6 rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
+            {aba === 'produtos' && (
+            <div className='mt-6 flex flex-col gap-6'>
+            <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Adicionar produto</span>
 
                 <form onSubmit={buscarProdutos} className='mt-4 flex gap-2'>
@@ -342,7 +622,7 @@ export default function CategoriasAdmin() {
                 )}
             </div>
 
-            <div className='mt-6 rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
+            <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Produtos cadastrados</span>
 
                 {erroProdutos && <p className='mt-3 text-sm text-red-base'>{erroProdutos}</p>}
@@ -427,6 +707,18 @@ export default function CategoriasAdmin() {
                                     </div>
 
                                     <div className='flex shrink-0 items-center gap-2'>
+                                        <button
+                                            type='button'
+                                            disabled={salvandoCodigo === produto.codigo_produto_ciss}
+                                            onClick={() => alternarAtivoProduto(produto)}
+                                            className={`rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-40 ${
+                                                produto.ativo
+                                                    ? 'bg-green-base/10 text-green-base hover:bg-green-base/20'
+                                                    : 'bg-gray-base/10 text-gray-dark hover:bg-gray-base/20 dark:text-dark-text-muted'
+                                            }`}
+                                        >
+                                            {produto.ativo ? 'Ativo' : 'Inativo'}
+                                        </button>
                                         <input
                                             type='number'
                                             min={0}
@@ -464,6 +756,8 @@ export default function CategoriasAdmin() {
                     </ul>
                 )}
             </div>
+            </div>
+            )}
         </PageShell>
     )
 }

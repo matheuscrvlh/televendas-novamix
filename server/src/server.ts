@@ -18,7 +18,10 @@ const app = fastify();
 
 await app.register(cors, {
     origin: ['https://hub.lojanovamix.com.br', 'http://localhost:5173'],
-    credentials: true
+    credentials: true,
+    // Sem isso, @fastify/cors usa o default 'GET,HEAD,POST' no preflight — bloqueia
+    // qualquer PATCH/PUT/DELETE do front antes mesmo de sair do navegador.
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
 });
 
 if(!process.env.SERVER_PORT) {

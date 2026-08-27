@@ -4,10 +4,15 @@ import { connCiss } from '../database/ciss.database'
 import { querySupabase } from '../database/supabase.database'
 import { loadQuery } from '../services/query.service'
 import { getProdutosPorCodigo } from '../services/produto.service'
+import { salvarArquivo, removerArquivo } from '../services/upload.service'
 
 interface Categoria {
     id: string
     nome: string
+    imagem: string | null
+    ativo: boolean
+    destaque_home: boolean
+    ordem_home: number
 }
 
 interface CategoriaParams {
@@ -21,7 +26,9 @@ interface ProdutoParams {
 export async function listCategorias(req: FastifyRequest, res: FastifyReply) {
     if (!(await requireAdmin(req, res))) return
 
-    const categorias = await querySupabase<Categoria>('SELECT id, nome FROM televendas.categorias ORDER BY nome')
+    const categorias = await querySupabase<Categoria>(
+        'SELECT id, nome, imagem, ativo, destaque_home, ordem_home FROM televendas.categorias ORDER BY nome'
+    )
     res.send(categorias)
 }
 
@@ -35,17 +42,99 @@ export async function createCategoria(req: FastifyRequest, res: FastifyReply) {
     }
 
     const [categoria] = await querySupabase<Categoria>(
-        'INSERT INTO televendas.categorias (nome) VALUES ($1) RETURNING id, nome',
+        'INSERT INTO televendas.categorias (nome) VALUES ($1) RETURNING id, nome, imagem, ativo, destaque_home, ordem_home',
         [nome.trim()]
     )
     res.code(201).send(categoria)
+}
+
+export async function updateCategoria(req: FastifyRequest, res: FastifyReply) {
+    if (!(await requireAdmin(req, res))) return
+
+    const { id } = req.params as CategoriaParams
+    const { nome, ativo, destaqueHome, ordemHome } = req.body as {
+        nome?: string
+        ativo?: boolean
+        destaqueHome?: boolean
+        ordemHome?: number
+    }
+
+    if (nome !== undefined && !nome.trim()) {
+        res.code(400).send({ error: 'O nome da categoria não pode ficar vazio.' })
+        return
+    }
+
+    const [categoria] = await querySupabase<Categoria>(
+        `UPDATE televendas.categorias
+         SET nome = COALESCE($1, nome),
+             ativo = COALESCE($2, ativo),
+             destaque_home = COALESCE($3, destaque_home),
+             ordem_home = COALESCE($4, ordem_home)
+         WHERE id = $5
+         RETURNING id, nome, imagem, ativo, destaque_home, ordem_home`,
+        [nome?.trim(), ativo, destaqueHome, ordemHome, id]
+    )
+
+    if (!categoria) {
+        res.code(404).send({ error: 'Categoria não encontrada.' })
+        return
+    }
+
+    res.send(categoria)
+}
+
+export async function updateCategoriaImagem(req: FastifyRequest, res: FastifyReply) {
+    if (!(await requireAdmin(req, res))) return
+
+    const { id } = req.params as CategoriaParams
+
+    let imagem: string | null = null
+    try {
+        for await (const part of req.parts()) {
+            if (part.type === 'file' && part.fieldname === 'imagem') {
+                imagem = await salvarArquivo('categorias', part)
+            }
+        }
+    } catch (err) {
+        res.code(413).send({ error: err instanceof Error ? err.message : 'Erro ao processar o upload.' })
+        return
+    }
+
+    if (!imagem) {
+        res.code(400).send({ error: 'Envie a imagem da categoria.' })
+        return
+    }
+
+    const [categoriaAnterior] = await querySupabase<{ imagem: string | null }>(
+        'SELECT imagem FROM televendas.categorias WHERE id = $1',
+        [id]
+    )
+    if (!categoriaAnterior) {
+        res.code(404).send({ error: 'Categoria não encontrada.' })
+        return
+    }
+
+    const [categoria] = await querySupabase<Categoria>(
+        'UPDATE televendas.categorias SET imagem = $1 WHERE id = $2 RETURNING id, nome, imagem, ativo, destaque_home, ordem_home',
+        [imagem, id]
+    )
+
+    if (categoriaAnterior.imagem) removerArquivo(categoriaAnterior.imagem)
+
+    res.send(categoria)
 }
 
 export async function deleteCategoria(req: FastifyRequest, res: FastifyReply) {
     if (!(await requireAdmin(req, res))) return
 
     const { id } = req.params as CategoriaParams
-    await querySupabase('DELETE FROM televendas.categorias WHERE id = $1', [id])
+
+    const [categoria] = await querySupabase<{ imagem: string | null }>(
+        'DELETE FROM televendas.categorias WHERE id = $1 RETURNING imagem',
+        [id]
+    )
+    if (categoria?.imagem) removerArquivo(categoria.imagem)
+
     res.code(204).send()
 }
 
@@ -73,8 +162,8 @@ export async function buscarProdutosCiss(req: FastifyRequest, res: FastifyReply)
 export async function listProdutos(req: FastifyRequest, res: FastifyReply) {
     if (!(await requireAdmin(req, res))) return
 
-    const registros = await querySupabase<{ codigo_produto_ciss: number; preco_promocional: string | null }>(
-        'SELECT codigo_produto_ciss, preco_promocional FROM televendas.produtos ORDER BY criado_em DESC'
+    const registros = await querySupabase<{ codigo_produto_ciss: number; preco_promocional: string | null; ativo: boolean }>(
+        'SELECT codigo_produto_ciss, preco_promocional, ativo FROM televendas.produtos ORDER BY criado_em DESC'
     )
 
     const categoriasPorProduto = await querySupabase<{ produto_codigo: number; id: string; nome: string }>(
@@ -90,6 +179,7 @@ export async function listProdutos(req: FastifyRequest, res: FastifyReply) {
     const produtos = registros.map((registro) => ({
         codigo_produto_ciss: registro.codigo_produto_ciss,
         preco_promocional: registro.preco_promocional != null ? Number(registro.preco_promocional) : null,
+        ativo: registro.ativo,
         categorias: categoriasPorProduto
             .filter((c) => c.produto_codigo === registro.codigo_produto_ciss)
             .map((c) => ({ id: c.id, nome: c.nome })),
@@ -137,14 +227,22 @@ export async function updateProduto(req: FastifyRequest, res: FastifyReply) {
 
     const { codigo } = req.params as ProdutoParams
     const codigoProduto = Number(codigo)
-    const { categoriaIds, precoPromocional } = req.body as {
+    const { categoriaIds, precoPromocional, ativo } = req.body as {
         categoriaIds?: string[]
         precoPromocional?: number | null
+        ativo?: boolean
     }
 
     if (precoPromocional !== undefined) {
         await querySupabase('UPDATE televendas.produtos SET preco_promocional = $1 WHERE codigo_produto_ciss = $2', [
             precoPromocional,
+            codigoProduto,
+        ])
+    }
+
+    if (ativo !== undefined) {
+        await querySupabase('UPDATE televendas.produtos SET ativo = $1 WHERE codigo_produto_ciss = $2', [
+            ativo,
             codigoProduto,
         ])
     }
