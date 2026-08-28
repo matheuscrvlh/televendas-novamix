@@ -15,7 +15,6 @@ type CategoriaRowProps = {
     onEnviarImagem: (e: ChangeEvent<HTMLInputElement>) => void
     onRenomear: (nome: string) => void
     onAlternarAtivo: () => void
-    onAlternarDestaque: () => void
     onRemover: () => void
 }
 
@@ -25,7 +24,6 @@ function CategoriaRow({
     onEnviarImagem,
     onRenomear,
     onAlternarAtivo,
-    onAlternarDestaque,
     onRemover,
 }: CategoriaRowProps) {
     const [editando, setEditando] = useState(false)
@@ -100,19 +98,6 @@ function CategoriaRow({
                 }`}
             >
                 {categoria.ativo ? 'Ativo' : 'Inativo'}
-            </button>
-
-            <button
-                type='button'
-                onClick={onAlternarDestaque}
-                title='Mostrar como seção com carrossel próprio na home'
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${
-                    categoria.destaque_home
-                        ? 'bg-blue-base/10 text-blue-base hover:bg-blue-base/20'
-                        : 'bg-gray-base/10 text-gray-dark hover:bg-gray-base/20 dark:text-dark-text-muted'
-                }`}
-            >
-                {categoria.destaque_home ? 'Na home' : 'Fora da home'}
             </button>
 
             <button
@@ -217,45 +202,6 @@ export default function CategoriasAdmin() {
             setCategorias((prev) => prev.map((c) => (c.id === categoria.id ? atualizada : c)))
         } catch (err) {
             setErroCategorias(err instanceof ApiError ? err.message : 'Erro ao atualizar categoria.')
-        }
-    }
-
-    async function alternarDestaqueCategoria(categoria: Categoria) {
-        try {
-            const novoValor = !categoria.destaque_home
-            const proximaOrdem = novoValor
-                ? Math.max(0, ...categorias.filter((c) => c.destaque_home).map((c) => c.ordem_home)) + 1
-                : categoria.ordem_home
-
-            const atualizada = await apiPatch<Categoria>(`/categorias/${categoria.id}`, {
-                destaqueHome: novoValor,
-                ordemHome: proximaOrdem,
-            })
-            setCategorias((prev) => prev.map((c) => (c.id === categoria.id ? atualizada : c)))
-        } catch (err) {
-            setErroCategorias(err instanceof ApiError ? err.message : 'Erro ao atualizar categoria.')
-        }
-    }
-
-    async function moverDestaque(index: number, direcao: -1 | 1) {
-        const destaque = categorias.filter((c) => c.destaque_home).sort((a, b) => a.ordem_home - b.ordem_home)
-        const alvo = index + direcao
-        if (alvo < 0 || alvo >= destaque.length) return
-
-        const anterior = categorias
-        const proximos = [...destaque]
-        ;[proximos[index], proximos[alvo]] = [proximos[alvo], proximos[index]]
-        const atualizados = proximos.map((c, i) => ({ ...c, ordem_home: i }))
-        setCategorias((prev) => prev.map((c) => atualizados.find((a) => a.id === c.id) ?? c))
-
-        try {
-            await Promise.all([
-                apiPatch(`/categorias/${atualizados[index].id}`, { ordemHome: atualizados[index].ordem_home }),
-                apiPatch(`/categorias/${atualizados[alvo].id}`, { ordemHome: atualizados[alvo].ordem_home }),
-            ])
-        } catch {
-            setCategorias(anterior)
-            setErroCategorias('Erro ao reordenar seções em destaque.')
         }
     }
 
@@ -417,48 +363,6 @@ export default function CategoriasAdmin() {
 
             {aba === 'categorias' && (
             <div className='mt-6 flex flex-col gap-6'>
-            {categorias.filter((c) => c.destaque_home).length > 0 && (
-                <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
-                    <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Seções em destaque na home</span>
-                    <p className='mt-1 text-xs text-gray-dark dark:text-dark-text-muted'>
-                        Cada uma vira um carrossel de produtos próprio na home, nessa ordem.
-                    </p>
-                    <div className='mt-3 flex flex-col gap-2'>
-                        {categorias
-                            .filter((c) => c.destaque_home)
-                            .sort((a, b) => a.ordem_home - b.ordem_home)
-                            .map((categoria, i, destaque) => (
-                                <div
-                                    key={categoria.id}
-                                    className='flex items-center gap-3 rounded-lg border border-gray-base/20 px-3 py-2 dark:border-dark-border'
-                                >
-                                    <span className='flex-1 text-sm text-gray-text dark:text-dark-text'>{categoria.nome}</span>
-                                    <div className='flex gap-1'>
-                                        <button
-                                            type='button'
-                                            disabled={i === 0}
-                                            onClick={() => moverDestaque(i, -1)}
-                                            className='flex h-7 w-7 items-center justify-center rounded-md text-gray-text transition hover:bg-gray disabled:opacity-25 dark:text-dark-text dark:hover:bg-dark-surface-2'
-                                            aria-label='Mover pra cima'
-                                        >
-                                            ↑
-                                        </button>
-                                        <button
-                                            type='button'
-                                            disabled={i === destaque.length - 1}
-                                            onClick={() => moverDestaque(i, 1)}
-                                            className='flex h-7 w-7 items-center justify-center rounded-md text-gray-text transition hover:bg-gray disabled:opacity-25 dark:text-dark-text dark:hover:bg-dark-surface-2'
-                                            aria-label='Mover pra baixo'
-                                        >
-                                            ↓
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-                </div>
-            )}
-
             <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Categorias</span>
 
@@ -483,7 +387,6 @@ export default function CategoriasAdmin() {
                                 onEnviarImagem={(e) => enviarImagemCategoria(categoria.id, e)}
                                 onRenomear={(nome) => renomearCategoria(categoria.id, nome)}
                                 onAlternarAtivo={() => alternarAtivoCategoria(categoria)}
-                                onAlternarDestaque={() => alternarDestaqueCategoria(categoria)}
                                 onRemover={() => removerCategoria(categoria.id)}
                             />
                         ))}

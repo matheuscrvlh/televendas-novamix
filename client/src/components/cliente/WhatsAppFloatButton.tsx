@@ -8,9 +8,10 @@ export default function WhatsAppFloatButton() {
             target='_blank'
             rel='noopener noreferrer'
             aria-label='Fale conosco no WhatsApp'
-            className='fixed bottom-4 right-4 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#20bd5a]'
+            className='fixed bottom-5 right-5 z-20 flex h-16 w-16 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition hover:scale-105 hover:bg-[#20bd5a]'
         >
-            <WhatsAppIcon className='h-6 w-6' />
+            <span className='absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-75' />
+            <WhatsAppIcon className='relative h-8 w-8' />
         </a>
     )
 }

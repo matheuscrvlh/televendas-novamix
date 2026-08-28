@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import CategoriasAdmin from './pages/admin/Categorias'
 import PedidosAdmin from './pages/admin/Pedidos'
+import ClientesAdmin from './pages/admin/Clientes'
 import PedidoDetalheAdmin from './pages/admin/PedidoDetalhe'
 import ConfiguracoesAdmin from './pages/admin/Configuracoes'
 import MarketingAdmin from './pages/admin/Marketing'
@@ -27,6 +28,7 @@ export default function App() {
         <Route path='/dashboard/categorias' element={<CategoriasAdmin />}/>
         <Route path='/dashboard/pedidos' element={<PedidosAdmin />}/>
         <Route path='/dashboard/pedidos/:pedidoId' element={<PedidoDetalheAdmin />}/>
+        <Route path='/dashboard/clientes' element={<ClientesAdmin />}/>
         <Route path='/dashboard/configuracoes' element={<ConfiguracoesAdmin />}/>
         <Route path='/dashboard/marketing' element={<MarketingAdmin />}/>
       </Routes>

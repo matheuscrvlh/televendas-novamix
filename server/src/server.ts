@@ -8,8 +8,10 @@ import { meRoutes } from './routes/me.routes';
 import { televendasRoutes } from './routes/televendas.routes';
 import { categoriaRoutes } from './routes/categoria.routes';
 import { clienteRoutes } from './routes/cliente.routes';
+import { clienteAdminRoutes } from './routes/clienteAdmin.routes';
 import { pedidoAdminRoutes } from './routes/pedidoAdmin.routes';
 import { configuracoesRoutes } from './routes/configuracoes.routes';
+import { configLojaRoutes } from './routes/configLoja.routes';
 import { bannerRoutes } from './routes/banner.routes';
 import { connCiss } from './database/ciss.database.ts';
 import { ensureUploadsRoot, UPLOADS_ROOT } from './services/upload.service';
@@ -32,6 +34,8 @@ if(!process.env.SERVER_PORT) {
     throw new Error('Erro ao encontrar CISS_DATABASE_URL no .env.')
 } else if (!process.env.SUPABASE_DATABASE_URL) {
     throw new Error('Erro ao encontrar SUPABASE_DATABASE_URL no .env.')
+} else if (!process.env.CPF_ENCRYPTION_KEY) {
+    throw new Error('Erro ao encontrar CPF_ENCRYPTION_KEY no .env.')
 };
 
 ensureUploadsRoot();
@@ -43,8 +47,10 @@ app.register(meRoutes);
 app.register(televendasRoutes);
 app.register(categoriaRoutes);
 app.register(clienteRoutes);
+app.register(clienteAdminRoutes);
 app.register(pedidoAdminRoutes);
 app.register(configuracoesRoutes);
+app.register(configLojaRoutes);
 app.register(bannerRoutes);
 
 async function start() {

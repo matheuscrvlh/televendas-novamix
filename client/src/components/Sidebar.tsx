@@ -18,6 +18,7 @@ const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-t
 const PAGINAS_ADMIN: { to: string; label: string }[] = [
     { to: '/dashboard/categorias', label: 'Categorias e Produtos' },
     { to: '/dashboard/pedidos', label: 'Pedidos' },
+    { to: '/dashboard/clientes', label: 'Clientes' },
     { to: '/dashboard/marketing', label: 'Marketing' },
     { to: '/dashboard/configuracoes', label: 'Configurações' },
 ]
@@ -64,7 +65,7 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
-                <Logo compact />
+                <Logo compact to='/dashboard' />
 
                 <nav className='mt-8 flex flex-1 flex-col gap-2 overflow-y-auto px-4'>
                     <NavLink

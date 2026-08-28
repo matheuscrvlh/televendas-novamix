@@ -4,7 +4,7 @@ import ClienteShell from '../../components/cliente/ClienteShell'
 import ProdutoCard from '../../components/cliente/ProdutoCard'
 import ProdutoCarousel from '../../components/cliente/ProdutoCarousel'
 import Spinner from '../../components/Spinner'
-import { ChevronLeftIcon, ChevronRightIcon, TagIcon, TrendingUpIcon } from '../../components/icons'
+import { ChevronLeftIcon, ChevronRightIcon, TagIcon } from '../../components/icons'
 import { clienteApiGet } from '../../lib/clienteApi'
 import { uploadImagemUrl } from '../../lib/imagens'
 import type { CategoriaComProdutos, ProdutoCatalogo } from '../../types/categoria'
@@ -21,7 +21,6 @@ export default function Loja() {
     const [erro, setErro] = useState<string | null>(null)
 
     const [ofertas, setOfertas] = useState<ProdutoCatalogo[]>([])
-    const [maisVendidos, setMaisVendidos] = useState<ProdutoCatalogo[]>([])
     const [bannerSecao, setBannerSecao] = useState<Banner | null>(null)
 
     const categoriaId = searchParams.get('categoria') ?? TODOS_ID
@@ -36,10 +35,6 @@ export default function Loja() {
         clienteApiGet<ProdutoCatalogo[]>('/cliente/produtos/ofertas')
             .then(setOfertas)
             .catch(() => setOfertas([]))
-
-        clienteApiGet<ProdutoCatalogo[]>('/cliente/produtos/mais-vendidos')
-            .then(setMaisVendidos)
-            .catch(() => setMaisVendidos([]))
 
         // Só o primeiro banner de seção ativo é exibido — não é carrossel.
         clienteApiGet<Banner[]>('/banners?posicao=secao')
@@ -83,9 +78,13 @@ export default function Loja() {
     const categoriaAtual = categorias.find((c) => c.id === categoriaId)
     const vitrineInicial = categoriaId === TODOS_ID && !busca.trim()
 
-    // Seções com carrossel próprio na home — só as categorias marcadas em destaque no admin.
+    // Seções com carrossel próprio na home — só as categorias marcadas "Na home" no admin,
+    // e só se tiverem produto (senão o carrossel fica vazio à toa).
     const categoriasDestaque = useMemo(
-        () => categorias.filter((c) => c.destaqueHome).sort((a, b) => a.ordemHome - b.ordemHome),
+        () =>
+            categorias
+                .filter((c) => c.destaqueHome && c.produtos.length > 0)
+                .sort((a, b) => a.ordemHome - b.ordemHome),
         [categorias]
     )
 
@@ -136,39 +135,34 @@ export default function Loja() {
                         icone={<TagIcon className='h-5 w-5 text-orange-base' />}
                         produtos={ofertas}
                     />
-                    <ProdutoCarousel
-                        titulo='Mais vendidos'
-                        icone={<TrendingUpIcon className='h-5 w-5 text-orange-base' />}
-                        produtos={maisVendidos}
-                    />
 
                     {categorias.length > 0 && (
-                        <div className='mt-8'>
-                            <h2 className='mb-4 text-lg font-semibold text-gray-text dark:text-dark-text'>
+                        <div className='mt-10'>
+                            <h2 className='mb-6 text-xl font-bold uppercase tracking-wide text-gray-text dark:text-dark-text'>
                                 Compre por categoria
                             </h2>
-                            <div className='flex flex-wrap gap-5'>
+                            <div className='flex flex-wrap justify-center gap-x-8 gap-y-8 sm:justify-start'>
                                 {categorias.map((categoria) => (
                                     <button
                                         key={categoria.id}
                                         type='button'
                                         onClick={() => selecionarCategoria(categoria.id)}
-                                        className='flex w-20 flex-col items-center gap-2 text-center'
+                                        className='group flex flex-col items-center gap-3 text-center'
                                     >
-                                        <span className='flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-gray-base/30 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-orange-base/50 hover:shadow-md dark:border-dark-border dark:bg-dark-surface'>
+                                        <span className='flex h-[139px] w-[150px] items-center justify-center transition duration-200 group-hover:-translate-y-1 sm:h-[193px] sm:w-[209px]'>
                                             {categoria.imagem ? (
                                                 <img
                                                     src={uploadImagemUrl(categoria.imagem)}
                                                     alt=''
-                                                    className='h-full w-full object-cover'
+                                                    className='h-full w-full object-contain'
                                                 />
                                             ) : (
-                                                <span className='text-lg font-semibold text-orange-base'>
+                                                <span className='flex h-24 w-24 items-center justify-center rounded-full bg-orange-base/10 text-2xl font-bold text-orange-base sm:h-36 sm:w-36 sm:text-3xl'>
                                                     {categoria.nome.charAt(0).toUpperCase()}
                                                 </span>
                                             )}
                                         </span>
-                                        <span className='text-xs font-medium text-gray-text dark:text-dark-text'>
+                                        <span className='text-sm font-semibold text-gray-text transition group-hover:text-orange-base dark:text-dark-text'>
                                             {categoria.nome}
                                         </span>
                                     </button>
@@ -198,7 +192,12 @@ export default function Loja() {
                     )}
 
                     {categoriasDestaque.map((categoria) => (
-                        <ProdutoCarousel key={categoria.id} titulo={categoria.nome} produtos={categoria.produtos} />
+                        <ProdutoCarousel
+                            key={categoria.id}
+                            titulo={categoria.nome}
+                            produtos={categoria.produtos}
+                            to={`/?categoria=${categoria.id}`}
+                        />
                     ))}
                 </>
             )}

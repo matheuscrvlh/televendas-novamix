@@ -147,28 +147,12 @@ function BannerForm({ posicao, hintDesktop, aspectDesktop, comMobile, onAdded }:
 type BannerItemProps = {
     banner: Banner
     comMobile: boolean
-    isFirst: boolean
-    isLast: boolean
     salvando: boolean
-    onMoveUp: () => void
-    onMoveDown: () => void
     onDelete: () => void
-    onToggleAtivo: () => void
     onSalvarLink: (link: string) => void
 }
 
-function BannerItem({
-    banner,
-    comMobile,
-    isFirst,
-    isLast,
-    salvando,
-    onMoveUp,
-    onMoveDown,
-    onDelete,
-    onToggleAtivo,
-    onSalvarLink,
-}: BannerItemProps) {
+function BannerItem({ banner, comMobile, salvando, onDelete, onSalvarLink }: BannerItemProps) {
     const [editandoLink, setEditandoLink] = useState(false)
     const [link, setLink] = useState(banner.link ?? '')
 
@@ -246,39 +230,16 @@ function BannerItem({
                 )}
             </div>
 
-            <button
-                type='button'
-                disabled={salvando}
-                onClick={onToggleAtivo}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition disabled:opacity-40 ${
+            <span
+                title='Ativação e ordem ficam em Configurações → Layout da loja'
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
                     banner.ativo
-                        ? 'bg-green-base/10 text-green-base hover:bg-green-base/20'
-                        : 'bg-gray-base/10 text-gray-dark hover:bg-gray-base/20 dark:text-dark-text-muted'
+                        ? 'bg-green-base/10 text-green-base'
+                        : 'bg-gray-base/10 text-gray-dark dark:text-dark-text-muted'
                 }`}
             >
                 {banner.ativo ? 'Ativo' : 'Inativo'}
-            </button>
-
-            <div className='flex shrink-0 gap-1'>
-                <button
-                    type='button'
-                    disabled={isFirst}
-                    onClick={onMoveUp}
-                    className='flex h-7 w-7 items-center justify-center rounded-md text-gray-text transition hover:bg-gray disabled:opacity-25 dark:text-dark-text dark:hover:bg-dark-surface'
-                    aria-label='Mover pra cima'
-                >
-                    ↑
-                </button>
-                <button
-                    type='button'
-                    disabled={isLast}
-                    onClick={onMoveDown}
-                    className='flex h-7 w-7 items-center justify-center rounded-md text-gray-text transition hover:bg-gray disabled:opacity-25 dark:text-dark-text dark:hover:bg-dark-surface'
-                    aria-label='Mover pra baixo'
-                >
-                    ↓
-                </button>
-            </div>
+            </span>
 
             <a
                 href={uploadImagemUrl(banner.imagem)}
@@ -336,18 +297,6 @@ function BannerSection({ posicao, titulo, descricao, hintDesktop, aspectDesktop,
         carregar()
     }
 
-    async function alternarAtivo(banner: Banner) {
-        setSalvando(banner.id)
-        try {
-            await apiPatch(`/marketing/banners/${banner.id}`, { ativo: !banner.ativo })
-            carregar()
-        } catch (err) {
-            setErro(err instanceof ApiError ? err.message : 'Erro ao atualizar.')
-        } finally {
-            setSalvando(null)
-        }
-    }
-
     async function salvarLink(banner: Banner, link: string) {
         setSalvando(banner.id)
         try {
@@ -357,27 +306,6 @@ function BannerSection({ posicao, titulo, descricao, hintDesktop, aspectDesktop,
             setErro(err instanceof ApiError ? err.message : 'Erro ao salvar o link.')
         } finally {
             setSalvando(null)
-        }
-    }
-
-    async function mover(index: number, direcao: -1 | 1) {
-        const alvo = index + direcao
-        if (alvo < 0 || alvo >= banners.length) return
-
-        const anterior = banners
-        const proximos = [...banners]
-        ;[proximos[index], proximos[alvo]] = [proximos[alvo], proximos[index]]
-        const atualizados = proximos.map((b, i) => ({ ...b, ordem: i }))
-        setBanners(atualizados)
-
-        try {
-            await Promise.all([
-                apiPatch(`/marketing/banners/${atualizados[index].id}`, { ordem: atualizados[index].ordem }),
-                apiPatch(`/marketing/banners/${atualizados[alvo].id}`, { ordem: atualizados[alvo].ordem }),
-            ])
-        } catch {
-            setBanners(anterior)
-            setErro('Erro ao reordenar banners.')
         }
     }
 
@@ -424,18 +352,13 @@ function BannerSection({ posicao, titulo, descricao, hintDesktop, aspectDesktop,
                         Nenhum banner cadastrado
                     </p>
                 ) : (
-                    banners.map((banner, i) => (
+                    banners.map((banner) => (
                         <BannerItem
                             key={banner.id}
                             banner={banner}
                             comMobile={comMobile}
-                            isFirst={i === 0}
-                            isLast={i === banners.length - 1}
                             salvando={salvando === banner.id}
-                            onMoveUp={() => mover(i, -1)}
-                            onMoveDown={() => mover(i, 1)}
                             onDelete={() => remover(banner.id)}
-                            onToggleAtivo={() => alternarAtivo(banner)}
                             onSalvarLink={(link) => salvarLink(banner, link)}
                         />
                     ))
@@ -467,13 +390,13 @@ export default function MarketingAdmin() {
             autorizado={autorizado}
             tituloAcessoRestrito='Marketing é uma área restrita a administradores.'
             titulo='Marketing'
-            subtitulo='Banners exibidos na loja do cliente.'
+            subtitulo='Cadastro dos banners da loja. Ativação e ordem ficam em Configurações → Layout da loja.'
         >
             <div className='flex flex-col gap-6'>
                 <BannerSection
                     posicao='hero'
                     titulo='Banner principal'
-                    descricao='Aparece em carrossel no topo da loja. A ordem define a sequência de exibição.'
+                    descricao='Carrossel no topo da loja.'
                     hintDesktop='1920 × 650 px'
                     aspectDesktop='aspect-1920/650'
                     comMobile
@@ -482,7 +405,7 @@ export default function MarketingAdmin() {
                 <BannerSection
                     posicao='secao'
                     titulo='Banner de seção'
-                    descricao='Aparece uma vez na home, entre a vitrine inicial e as seções de categoria em destaque. Só o primeiro banner ativo é exibido.'
+                    descricao='Aparece uma vez na home, entre a vitrine inicial e as seções de categoria em destaque.'
                     hintDesktop='1358 × 351 px'
                     aspectDesktop='aspect-1358/351'
                     comMobile={false}

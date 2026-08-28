@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { requireAdmin } from '../middlewares/auth.middlewares'
 import { querySupabase, withTransaction } from '../database/supabase.database'
+import { decryptNullable } from '../utils/crypto'
 
 const STATUS_VALIDOS = [
     'enviado',
@@ -36,7 +37,7 @@ export async function listPedidosAdmin(req: FastifyRequest, res: FastifyReply) {
         where = 'WHERE p.status = $1'
     }
 
-    const pedidos = await querySupabase(
+    const pedidos = await querySupabase<{ telefone: string | null }>(
         `SELECT p.id, p.status, p.valor_total, p.criado_em, p.atualizado_em,
                 c.razao_social, c.email, c.telefone
          FROM televendas.pedidos p
@@ -46,7 +47,7 @@ export async function listPedidosAdmin(req: FastifyRequest, res: FastifyReply) {
          LIMIT 200`,
         params
     )
-    res.send(pedidos)
+    res.send(pedidos.map((p) => ({ ...p, telefone: decryptNullable(p.telefone) })))
 }
 
 export async function getPedidoAdmin(req: FastifyRequest, res: FastifyReply) {
@@ -54,7 +55,7 @@ export async function getPedidoAdmin(req: FastifyRequest, res: FastifyReply) {
 
     const { pedidoId } = req.params as PedidoParams
 
-    const [pedido] = await querySupabase(
+    const [pedido] = await querySupabase<{ telefone: string | null }>(
         `SELECT p.id, p.status, p.valor_total, p.observacao, p.criado_em, p.atualizado_em,
                 c.id AS cliente_id, c.razao_social, c.email, c.telefone, c.codigo_cliente_ciss
          FROM televendas.pedidos p
@@ -67,6 +68,8 @@ export async function getPedidoAdmin(req: FastifyRequest, res: FastifyReply) {
         res.code(404).send({ error: 'Pedido não encontrado.' })
         return
     }
+
+    pedido.telefone = decryptNullable(pedido.telefone)
 
     const itens = await querySupabase(
         `SELECT codigo_produto, descricao_produto, quantidade, preco_unitario

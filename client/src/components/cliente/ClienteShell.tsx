@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import Logo from '../Logo'
 import SiteFooter from './SiteFooter'
@@ -13,7 +13,10 @@ import { useFavoritos } from '../../contexts/FavoritosContext'
 import { clienteApiGet, clienteApiPost } from '../../lib/clienteApi'
 import { WHATSAPP_LINK } from '../../lib/contato'
 import { formatCurrency } from '../../lib/format'
-import type { CategoriaNav } from '../../types/categoria'
+import type { CategoriaComProdutos } from '../../types/categoria'
+import type { ConfigLoja } from '../../types/configLoja'
+
+const TEXTO_TOPO_PADRAO = 'Venda exclusiva para clientes cadastrados Novamix'
 
 type ClienteShellProps = {
     children: ReactNode
@@ -40,14 +43,27 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
     const [searchParams, setSearchParams] = useSearchParams()
 
     const [menuAberto, setMenuAberto] = useState(false)
+    const [categoriaMenuAberto, setCategoriaMenuAberto] = useState(false)
     const [termoBusca, setTermoBusca] = useState(searchParams.get('busca') ?? '')
-    const [categorias, setCategorias] = useState<CategoriaNav[]>([])
+    const [categorias, setCategorias] = useState<CategoriaComProdutos[]>([])
+    const [textoTopo, setTextoTopo] = useState(TEXTO_TOPO_PADRAO)
 
     useEffect(() => {
-        clienteApiGet<CategoriaNav[]>('/cliente/categorias')
+        clienteApiGet<CategoriaComProdutos[]>('/cliente/categorias')
             .then(setCategorias)
             .catch(() => setCategorias([]))
+
+        clienteApiGet<ConfigLoja>('/cliente/config')
+            .then((config) => setTextoTopo(config.textoTopo))
+            .catch(() => {})
     }, [])
+
+    // No menu de categorias do header, só as marcadas "Na home" aparecem soltas — as demais
+    // ficam dentro do dropdown "Categorias", que sempre lista todas.
+    const categoriasDestaque = useMemo(
+        () => categorias.filter((c) => c.destaqueHome).sort((a, b) => a.ordemHome - b.ordemHome),
+        [categorias]
+    )
 
     // Depois do login (redirect=/?carrinho=aberto), reabre o carrinho automaticamente
     // e limpa o parâmetro da URL.
@@ -102,13 +118,13 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
 
     return (
         <div className='min-h-screen w-full bg-gray dark:bg-dark-bg'>
-            <div className='bg-gray-text py-1.5 text-center text-xs font-medium text-white dark:bg-dark-surface-2'>
-                Venda exclusiva para clientes cadastrados Novamix
-            </div>
-
             <header className='sticky top-0 z-40 border-b border-gray-base/30 bg-white dark:border-dark-border dark:bg-dark-surface'>
+                <div className='bg-gray-text py-1.5 text-center text-xs font-medium text-white dark:bg-dark-surface-2'>
+                    {textoTopo}
+                </div>
+
                 <div className='mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-3'>
-                    <Logo compact />
+                    <Logo compact to='/' />
 
                     <form onSubmit={buscar} className='order-3 w-full sm:order-0 sm:flex-1'>
                         <div className='relative'>
@@ -211,16 +227,49 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
 
                 {categorias.length > 0 && (
                     <div className='hidden border-t border-gray-base/20 md:block dark:border-dark-border'>
-                        <div className='mx-auto flex max-w-6xl flex-wrap gap-1 px-6 py-2'>
-                            {categorias.map((categoria) => (
-                                <Link
-                                    key={categoria.id}
-                                    to={`/?categoria=${categoria.id}`}
-                                    className='rounded-lg px-2.5 py-1 text-sm font-medium text-gray-text transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
+                        <div className='mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-6 py-2'>
+                            <div className='relative'>
+                                <button
+                                    type='button'
+                                    onClick={() => setCategoriaMenuAberto((v) => !v)}
+                                    className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
+                                        categoriaMenuAberto ? 'bg-orange-base text-white' : 'bg-orange-base/10 text-orange-base hover:bg-orange-base/20'
+                                    }`}
                                 >
-                                    {categoria.nome}
-                                </Link>
-                            ))}
+                                    <MenuIcon className='h-4 w-4' />
+                                    Categorias
+                                </button>
+
+                                {categoriaMenuAberto && (
+                                    <>
+                                        <div className='fixed inset-0 z-40' onClick={() => setCategoriaMenuAberto(false)} />
+                                        <div className='absolute left-0 top-full z-50 mt-1 max-h-96 w-64 overflow-y-auto rounded-lg border border-gray-base/30 bg-white py-2 shadow-lg dark:border-dark-border dark:bg-dark-surface'>
+                                            {categorias.map((categoria) => (
+                                                <Link
+                                                    key={categoria.id}
+                                                    to={`/?categoria=${categoria.id}`}
+                                                    onClick={() => setCategoriaMenuAberto(false)}
+                                                    className='block px-4 py-2 text-sm text-gray-text transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
+                                                >
+                                                    {categoria.nome}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className='flex flex-wrap gap-1'>
+                                {categoriasDestaque.map((categoria) => (
+                                    <Link
+                                        key={categoria.id}
+                                        to={`/?categoria=${categoria.id}`}
+                                        className='rounded-lg px-2.5 py-1 text-sm font-medium text-gray-text transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
+                                    >
+                                        {categoria.nome}
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -239,7 +288,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                 }`}
             >
                 <div className='flex items-center justify-between border-b border-gray-base/30 p-4 dark:border-dark-border'>
-                    <Logo compact />
+                    <Logo compact to='/' />
                     <button
                         type='button'
                         onClick={fecharMenu}

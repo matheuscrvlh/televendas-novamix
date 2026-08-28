@@ -6,6 +6,7 @@ import { loadQuery } from '../services/query.service'
 import { getProdutosPorCodigo } from '../services/produto.service'
 import { sqlComVendedores } from '../services/vendedores.service'
 import { signClienteToken } from '../utils/jwt'
+import { encrypt, decryptNullable } from '../utils/crypto'
 
 const QTD_MAIS_VENDIDOS = 12
 
@@ -38,7 +39,7 @@ function clienteResumo(cliente: Cliente) {
         id: cliente.id,
         razaoSocial: cliente.razao_social,
         email: cliente.email,
-        telefone: cliente.telefone,
+        telefone: decryptNullable(cliente.telefone),
     }
 }
 
@@ -103,10 +104,17 @@ export async function cadastrarCliente(req: FastifyRequest, res: FastifyReply) {
 
     const cliente = await withTransaction((query) =>
         query<Cliente>(
-            `INSERT INTO televendas.clientes (codigo_cliente_ciss, razao_social, email, senha_hash, telefone)
-             VALUES ($1, $2, $3, $4, $5)
+            `INSERT INTO televendas.clientes (codigo_cliente_ciss, razao_social, email, senha_hash, telefone, cpf_cnpj)
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING id, codigo_cliente_ciss, razao_social, email, telefone`,
-            [clienteCiss.IDCLIFOR, clienteCiss.NOME, email.toLowerCase().trim(), senhaHash, telefone ?? null]
+            [
+                clienteCiss.IDCLIFOR,
+                clienteCiss.NOME,
+                email.toLowerCase().trim(),
+                senhaHash,
+                telefone ? encrypt(telefone) : null,
+                encrypt(documento),
+            ]
         ).then(([novoCliente]) => novoCliente)
     )
 
