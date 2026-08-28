@@ -31,6 +31,10 @@ const linkActiveClass = 'bg-orange-base text-white'
 const linkInactiveClass =
     'text-gray-text hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
 
+// Variante dos links usada dentro do header, que agora tem fundo laranja — precisa de texto claro.
+const headerLinkActiveClass = 'bg-white text-orange-base'
+const headerLinkInactiveClass = 'text-white hover:bg-white/15 hover:text-white'
+
 function primeiroNome(razaoSocial: string) {
     return razaoSocial.trim().split(/\s+/)[0]
 }
@@ -118,8 +122,8 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
 
     return (
         <div className='min-h-screen w-full bg-gray dark:bg-dark-bg'>
-            <header className='sticky top-0 z-40 border-b border-gray-base/30 bg-white dark:border-dark-border dark:bg-dark-surface'>
-                <div className='bg-gray-text py-1.5 text-center text-xs font-medium text-white dark:bg-dark-surface-2'>
+            <header className='sticky top-0 z-40 border-b border-orange-light/40 bg-orange-base'>
+                <div className='bg-white py-1.5 text-center text-xs font-medium text-gray-text dark:bg-dark-surface-2 dark:text-dark-text'>
                     {textoTopo}
                 </div>
 
@@ -150,7 +154,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                             href={WHATSAPP_LINK}
                             target='_blank'
                             rel='noopener noreferrer'
-                            className={`${linkBaseClass} ${linkInactiveClass}`}
+                            className={`${linkBaseClass} ${headerLinkInactiveClass}`}
                         >
                             <HeadsetIcon className='h-4 w-4' />
                             Atendimento
@@ -158,7 +162,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
 
                         <NavLink
                             to='/favoritos'
-                            className={({ isActive }) => `relative ${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`}
+                            className={({ isActive }) => `relative ${linkBaseClass} ${isActive ? headerLinkActiveClass : headerLinkInactiveClass}`}
                         >
                             <HeartIcon className='h-4 w-4' />
                             Favoritos
@@ -172,7 +176,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                         <button
                             type='button'
                             onClick={abrirCarrinho}
-                            className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${linkInactiveClass}`}
+                            className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${headerLinkInactiveClass}`}
                         >
                             <CartIcon className='h-4 w-4' />
                             <span className='flex flex-col leading-tight'>
@@ -190,11 +194,11 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                     <div className='hidden items-center gap-2 md:flex'>
                         <Link
                             to={cliente ? '/conta' : '/entrar'}
-                            className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${linkInactiveClass}`}
+                            className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${headerLinkInactiveClass}`}
                         >
                             <UserIcon className='h-5 w-5 shrink-0' />
                             <span className='flex flex-col leading-tight'>
-                                <span className='text-xs font-normal text-gray-dark dark:text-dark-text-muted'>
+                                <span className='text-xs font-normal text-white/80'>
                                     Olá, {cliente ? primeiroNome(cliente.razaoSocial) : 'Visitante'}
                                 </span>
                                 <span className='text-sm font-semibold'>{cliente ? 'Minha conta' : 'Fazer login'}</span>
@@ -215,7 +219,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                     <button
                         type='button'
                         onClick={() => setMenuAberto((v) => !v)}
-                        className='relative rounded-lg p-2 text-gray-text transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text md:hidden'
+                        className='relative rounded-lg p-2 text-white transition hover:bg-white/15 md:hidden'
                         aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
                     >
                         <MenuIcon className='h-6 w-6' />
@@ -226,14 +230,14 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                 </div>
 
                 {categorias.length > 0 && (
-                    <div className='hidden border-t border-gray-base/20 md:block dark:border-dark-border'>
+                    <div className='hidden border-t border-orange-light/40 md:block'>
                         <div className='mx-auto flex max-w-6xl flex-wrap items-center gap-1 px-6 py-2'>
                             <div className='relative'>
                                 <button
                                     type='button'
                                     onClick={() => setCategoriaMenuAberto((v) => !v)}
                                     className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-semibold transition ${
-                                        categoriaMenuAberto ? 'bg-orange-base text-white' : 'bg-orange-base/10 text-orange-base hover:bg-orange-base/20'
+                                        categoriaMenuAberto ? 'bg-white text-orange-base' : 'bg-white/15 text-white hover:bg-white/25'
                                     }`}
                                 >
                                     <MenuIcon className='h-4 w-4' />
@@ -264,7 +268,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                                     <Link
                                         key={categoria.id}
                                         to={`/?categoria=${categoria.id}`}
-                                        className='rounded-lg px-2.5 py-1 text-sm font-medium text-gray-text transition hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
+                                        className='rounded-lg px-2.5 py-1 text-sm font-medium text-white transition hover:bg-white/15'
                                     >
                                         {categoria.nome}
                                     </Link>

@@ -142,7 +142,7 @@ export default function Loja() {
                                 Compre por categoria
                             </h2>
                             <div className='flex flex-wrap justify-center gap-x-8 gap-y-8 sm:justify-start'>
-                                {categorias.map((categoria) => (
+                                {categorias.slice(0, 3).map((categoria) => (
                                     <button
                                         key={categoria.id}
                                         type='button'
