@@ -150,7 +150,7 @@ export default function Loja() {
                             <h2 className='mb-6 text-xl font-bold uppercase tracking-wide text-gray-text dark:text-dark-text'>
                                 Compre por categoria
                             </h2>
-                            <div className='flex flex-wrap justify-center gap-x-8 gap-y-8 sm:justify-start'>
+                            <div className='grid grid-cols-2 justify-items-center gap-x-8 gap-y-8 sm:grid-cols-4'>
                                 {categoriasDestaque.slice(0, 4).map((categoria) => (
                                     <button
                                         key={categoria.id}

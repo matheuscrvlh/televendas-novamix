@@ -6,7 +6,17 @@ import WhatsAppFloatButton from './WhatsAppFloatButton'
 import CarrinhoDrawer from './CarrinhoDrawer'
 import Spinner from '../Spinner'
 import BannerCarousel from '../BannerCarousel'
-import { CartIcon, CloseIcon, HeadsetIcon, HeartIcon, LogOutIcon, MenuIcon, SearchIcon, UserIcon } from '../icons'
+import {
+    CartIcon,
+    ChevronRightIcon,
+    CloseIcon,
+    HeadsetIcon,
+    HeartIcon,
+    LogOutIcon,
+    MenuIcon,
+    SearchIcon,
+    UserIcon,
+} from '../icons'
 import { useClienteMe } from '../../hooks/useClienteMe'
 import { useCarrinho } from '../../contexts/CarrinhoContext'
 import { useFavoritos } from '../../contexts/FavoritosContext'
@@ -27,13 +37,13 @@ type ClienteShellProps = {
 }
 
 const linkBaseClass = 'flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors'
-const linkActiveClass = 'bg-orange-base text-white'
-const linkInactiveClass =
-    'text-gray-text hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
 
 // Variante dos links usada dentro do header, que agora tem fundo laranja — precisa de texto claro.
 const headerLinkActiveClass = 'bg-white text-orange-base'
 const headerLinkInactiveClass = 'text-white hover:bg-white/15 hover:text-white'
+
+// Itens do menu hambúrguer (fundo navy) — pills claras sobre fundo escuro.
+const drawerPillClass = 'flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20'
 
 function primeiroNome(razaoSocial: string) {
     return razaoSocial.trim().split(/\s+/)[0]
@@ -127,10 +137,51 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                     {textoTopo}
                 </div>
 
-                <div className='mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-6 py-3'>
-                    <Logo compact to='/' />
+                <div className='mx-auto max-w-6xl px-6 py-3'>
+                    {/* Mobile: hamburger — logo — favoritos/carrinho, busca numa linha abaixo */}
+                    <div className='flex items-center justify-between gap-2 md:hidden'>
+                        <button
+                            type='button'
+                            onClick={() => setMenuAberto((v) => !v)}
+                            className='rounded-lg p-2 text-white transition hover:bg-white/15'
+                            aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+                        >
+                            <MenuIcon className='h-6 w-6' />
+                        </button>
 
-                    <form onSubmit={buscar} className='order-3 w-full sm:order-0 sm:flex-1'>
+                        <Logo compact to='/' />
+
+                        <div className='flex items-center gap-1'>
+                            <NavLink
+                                to='/favoritos'
+                                className='relative rounded-lg p-2 text-white transition hover:bg-white/15'
+                                aria-label='Favoritos'
+                            >
+                                <HeartIcon className='h-6 w-6' />
+                                {favoritos.length > 0 && (
+                                    <span className='absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-base px-1 text-[10px] font-semibold text-white'>
+                                        {favoritos.length}
+                                    </span>
+                                )}
+                            </NavLink>
+
+                            <button
+                                type='button'
+                                onClick={abrirCarrinho}
+                                className='relative rounded-lg p-2 text-white transition hover:bg-white/15'
+                                aria-label='Meu carrinho'
+                            >
+                                <CartIcon className='h-6 w-6' />
+                                {qtdCarrinho > 0 && (
+                                    <span className='absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-base px-1 text-[10px] font-semibold text-white'>
+                                        {qtdCarrinho}
+                                    </span>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    <form onSubmit={buscar} className='mt-3 md:hidden'>
                         <div className='relative'>
                             <input
                                 type='text'
@@ -149,84 +200,96 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                         </div>
                     </form>
 
-                    <nav className='hidden items-center gap-1 md:flex'>
-                        <a
-                            href={WHATSAPP_LINK}
-                            target='_blank'
-                            rel='noopener noreferrer'
-                            className={`${linkBaseClass} ${headerLinkInactiveClass}`}
-                        >
-                            <HeadsetIcon className='h-4 w-4' />
-                            Atendimento
-                        </a>
+                    {/* Desktop: logo — busca — nav — conta */}
+                    <div className='hidden items-center gap-4 md:flex'>
+                        <Logo compact to='/' />
 
-                        <NavLink
-                            to='/favoritos'
-                            className={({ isActive }) => `relative ${linkBaseClass} ${isActive ? headerLinkActiveClass : headerLinkInactiveClass}`}
-                        >
-                            <HeartIcon className='h-4 w-4' />
-                            Favoritos
-                            {favoritos.length > 0 && (
-                                <span className='rounded-full bg-red-base px-1.5 py-0.5 text-xs text-white'>
-                                    {favoritos.length}
-                                </span>
-                            )}
-                        </NavLink>
+                        <form onSubmit={buscar} className='flex-1'>
+                            <div className='relative'>
+                                <input
+                                    type='text'
+                                    value={termoBusca}
+                                    onChange={(e) => setTermoBusca(e.target.value)}
+                                    placeholder='O que você procura?'
+                                    className='w-full rounded-lg border border-gray-base/30 bg-gray px-4 py-2.5 pr-10 text-sm text-gray-text focus:border-orange-base focus:outline-none dark:border-dark-border dark:bg-dark-surface-2 dark:text-dark-text'
+                                />
+                                <button
+                                    type='submit'
+                                    aria-label='Buscar'
+                                    className='absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-dark transition hover:text-orange-base dark:text-dark-text-muted'
+                                >
+                                    <SearchIcon className='h-4 w-4' />
+                                </button>
+                            </div>
+                        </form>
 
-                        <button
-                            type='button'
-                            onClick={abrirCarrinho}
-                            className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${headerLinkInactiveClass}`}
-                        >
-                            <CartIcon className='h-4 w-4' />
-                            <span className='flex flex-col leading-tight'>
-                                <span className='text-sm font-semibold'>Meu carrinho</span>
-                                <span className='text-xs font-normal opacity-80'>{formatCurrency(total)}</span>
-                            </span>
-                            {qtdCarrinho > 0 && (
-                                <span className='rounded-full bg-red-base px-1.5 py-0.5 text-xs font-semibold text-white'>
-                                    {qtdCarrinho}
-                                </span>
-                            )}
-                        </button>
-                    </nav>
+                        <nav className='flex items-center gap-1'>
+                            <a
+                                href={WHATSAPP_LINK}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className={`${linkBaseClass} ${headerLinkInactiveClass}`}
+                            >
+                                <HeadsetIcon className='h-4 w-4' />
+                                Atendimento
+                            </a>
 
-                    <div className='hidden items-center gap-2 md:flex'>
-                        <Link
-                            to={cliente ? '/conta' : '/entrar'}
-                            className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${headerLinkInactiveClass}`}
-                        >
-                            <UserIcon className='h-5 w-5 shrink-0' />
-                            <span className='flex flex-col leading-tight'>
-                                <span className='text-xs font-normal text-white/80'>
-                                    Olá, {cliente ? primeiroNome(cliente.razaoSocial) : 'Visitante'}
-                                </span>
-                                <span className='text-sm font-semibold'>{cliente ? 'Minha conta' : 'Fazer login'}</span>
-                            </span>
-                        </Link>
+                            <NavLink
+                                to='/favoritos'
+                                className={({ isActive }) => `relative ${linkBaseClass} ${isActive ? headerLinkActiveClass : headerLinkInactiveClass}`}
+                            >
+                                <HeartIcon className='h-4 w-4' />
+                                Favoritos
+                                {favoritos.length > 0 && (
+                                    <span className='rounded-full bg-red-base px-1.5 py-0.5 text-xs text-white'>
+                                        {favoritos.length}
+                                    </span>
+                                )}
+                            </NavLink>
 
-                        {cliente && (
                             <button
                                 type='button'
-                                onClick={sair}
-                                className='rounded-lg bg-red-light px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-base'
+                                onClick={abrirCarrinho}
+                                className={`relative flex items-center gap-1.5 rounded-lg px-3 py-2 transition-colors ${headerLinkInactiveClass}`}
                             >
-                                Sair
+                                <CartIcon className='h-4 w-4' />
+                                <span className='flex flex-col leading-tight'>
+                                    <span className='text-sm font-semibold'>Meu carrinho</span>
+                                    <span className='text-xs font-normal opacity-80'>{formatCurrency(total)}</span>
+                                </span>
+                                {qtdCarrinho > 0 && (
+                                    <span className='rounded-full bg-red-base px-1.5 py-0.5 text-xs font-semibold text-white'>
+                                        {qtdCarrinho}
+                                    </span>
+                                )}
                             </button>
-                        )}
-                    </div>
+                        </nav>
 
-                    <button
-                        type='button'
-                        onClick={() => setMenuAberto((v) => !v)}
-                        className='relative rounded-lg p-2 text-white transition hover:bg-white/15 md:hidden'
-                        aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
-                    >
-                        <MenuIcon className='h-6 w-6' />
-                        {(qtdCarrinho > 0 || favoritos.length > 0) && (
-                            <span className='absolute right-0.5 top-0.5 h-2 w-2 rounded-full bg-red-base' />
-                        )}
-                    </button>
+                        <div className='flex items-center gap-2'>
+                            <Link
+                                to={cliente ? '/conta' : '/entrar'}
+                                className={`flex items-center gap-2 rounded-lg px-3 py-2 transition-colors ${headerLinkInactiveClass}`}
+                            >
+                                <UserIcon className='h-5 w-5 shrink-0' />
+                                <span className='flex flex-col leading-tight'>
+                                    <span className='text-xs font-normal text-white/80'>
+                                        Olá, {cliente ? primeiroNome(cliente.razaoSocial) : 'Visitante'}
+                                    </span>
+                                    <span className='text-sm font-semibold'>{cliente ? 'Minha conta' : 'Fazer login'}</span>
+                                </span>
+                            </Link>
+
+                            {cliente && (
+                                <button
+                                    type='button'
+                                    onClick={sair}
+                                    className='rounded-lg bg-red-light px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-base'
+                                >
+                                    Sair
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
                 {categorias.length > 0 && (
@@ -287,130 +350,85 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
             />
 
             <aside
-                className={`fixed top-0 right-0 z-40 flex h-dvh w-72 flex-col border-l border-gray-base/30 bg-white shadow-lg transition-transform duration-300 ease-in-out dark:border-dark-border dark:bg-dark-surface md:hidden ${
-                    menuAberto ? 'translate-x-0' : 'translate-x-full'
+                className={`fixed top-0 left-0 z-40 flex h-dvh w-80 max-w-[85vw] flex-col bg-orange-base shadow-lg transition-transform duration-300 ease-in-out md:hidden ${
+                    menuAberto ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
-                <div className='flex items-center justify-between border-b border-gray-base/30 p-4 dark:border-dark-border'>
-                    <Logo compact to='/' />
+                <div className='flex items-center justify-between gap-3 p-4'>
+                    <Link to={cliente ? '/conta' : '/entrar'} onClick={fecharMenu} className='flex items-center gap-2 text-white'>
+                        <span className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15'>
+                            <UserIcon className='h-5 w-5' />
+                        </span>
+                        <span className='flex flex-col leading-tight'>
+                            <span className='text-xs font-normal text-white/70'>
+                                Olá, {cliente ? primeiroNome(cliente.razaoSocial) : 'Visitante'}
+                            </span>
+                            <span className='text-sm font-semibold'>{cliente ? 'Minha conta' : 'Fazer login'}</span>
+                        </span>
+                    </Link>
+
                     <button
                         type='button'
                         onClick={fecharMenu}
-                        className='rounded-md p-1 text-gray-dark hover:text-orange-base dark:text-dark-text-muted dark:hover:text-orange-light'
+                        className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-orange-base transition hover:bg-white/90'
                         aria-label='Fechar menu'
                     >
                         <CloseIcon className='h-5 w-5' />
                     </button>
                 </div>
 
-                <nav className='mt-4 flex flex-1 flex-col gap-2 overflow-y-auto px-4'>
-                    <NavLink
-                        to='/'
-                        end
-                        onClick={fecharMenu}
-                        className={({ isActive }) => `${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`}
-                    >
-                        Catálogo
+                <nav className='mt-2 flex flex-1 flex-col gap-2 overflow-y-auto px-4 pb-4'>
+                    <NavLink to='/' end onClick={fecharMenu} className={drawerPillClass}>
+                        <span className='flex-1'>Catálogo</span>
+                        <ChevronRightIcon className='h-4 w-4 text-white/60' />
                     </NavLink>
+
+                    {categorias.map((categoria) => (
+                        <Link
+                            key={categoria.id}
+                            to={`/?categoria=${categoria.id}`}
+                            onClick={fecharMenu}
+                            className={drawerPillClass}
+                        >
+                            <span className='flex-1'>{categoria.nome}</span>
+                            <ChevronRightIcon className='h-4 w-4 text-white/60' />
+                        </Link>
+                    ))}
+                </nav>
+
+                <div className='flex items-center justify-around gap-2 border-t border-white/10 p-4'>
                     <a
                         href={WHATSAPP_LINK}
                         target='_blank'
                         rel='noopener noreferrer'
                         onClick={fecharMenu}
-                        className={`${linkBaseClass} ${linkInactiveClass}`}
+                        className='flex flex-col items-center gap-1 text-xs font-semibold text-white/80 transition hover:text-white'
                     >
-                        <HeadsetIcon className='h-4 w-4' />
+                        <HeadsetIcon className='h-5 w-5' />
                         Atendimento
                     </a>
-                    <NavLink
-                        to='/favoritos'
+
+                    <Link
+                        to={cliente ? '/conta' : '/entrar'}
                         onClick={fecharMenu}
-                        className={({ isActive }) => `${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`}
+                        className='flex flex-col items-center gap-1 text-xs font-semibold text-white/80 transition hover:text-white'
                     >
-                        <HeartIcon className='h-4 w-4' />
-                        Favoritos
-                        {favoritos.length > 0 && (
-                            <span className='rounded-full bg-red-base px-1.5 py-0.5 text-xs text-white'>
-                                {favoritos.length}
-                            </span>
-                        )}
-                    </NavLink>
-                    <button
-                        type='button'
-                        onClick={() => {
-                            fecharMenu()
-                            abrirCarrinho()
-                        }}
-                        className={`${linkBaseClass} ${linkInactiveClass}`}
-                    >
-                        <CartIcon className='h-4 w-4' />
-                        <span className='flex flex-1 items-center justify-between'>
-                            <span>Meu carrinho</span>
-                            <span className='text-xs font-normal opacity-80'>{formatCurrency(total)}</span>
-                        </span>
-                        {qtdCarrinho > 0 && (
-                            <span className='rounded-full bg-red-base px-1.5 py-0.5 text-xs text-white'>
-                                {qtdCarrinho}
-                            </span>
-                        )}
-                    </button>
+                        <UserIcon className='h-5 w-5' />
+                        Meus pedidos
+                    </Link>
+
                     {cliente && (
-                        <NavLink
-                            to='/conta'
-                            onClick={fecharMenu}
-                            className={({ isActive }) => `${linkBaseClass} ${isActive ? linkActiveClass : linkInactiveClass}`}
-                        >
-                            <UserIcon className='h-4 w-4' />
-                            Minha conta
-                        </NavLink>
-                    )}
-
-                    {categorias.length > 0 && (
-                        <div className='mt-2 border-t border-gray-base/20 pt-2 dark:border-dark-border'>
-                            <p className='px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted'>
-                                Categorias
-                            </p>
-                            {categorias.map((categoria) => (
-                                <Link
-                                    key={categoria.id}
-                                    to={`/?categoria=${categoria.id}`}
-                                    onClick={fecharMenu}
-                                    className={`${linkBaseClass} ${linkInactiveClass}`}
-                                >
-                                    {categoria.nome}
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </nav>
-
-                <div className='flex flex-col gap-3 p-4'>
-                    <p className='text-sm text-gray-dark dark:text-dark-text-muted'>
-                        Olá, <span className='font-semibold text-gray-text dark:text-dark-text'>{cliente ? primeiroNome(cliente.razaoSocial) : 'Visitante'}</span>
-                    </p>
-
-                    {cliente ? (
                         <button
                             type='button'
                             onClick={() => {
                                 fecharMenu()
                                 sair()
                             }}
-                            className='flex w-full items-center justify-center gap-2 rounded-lg bg-red-light px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-base'
+                            className='flex flex-col items-center gap-1 text-xs font-semibold text-white/80 transition hover:text-white'
                         >
-                            <LogOutIcon className='h-4 w-4' />
+                            <LogOutIcon className='h-5 w-5' />
                             Sair
                         </button>
-                    ) : (
-                        !loading && (
-                            <Link
-                                to='/entrar'
-                                onClick={fecharMenu}
-                                className='flex w-full items-center justify-center rounded-lg bg-orange-base px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-light'
-                            >
-                                Fazer login
-                            </Link>
-                        )
                     )}
                 </div>
             </aside>
