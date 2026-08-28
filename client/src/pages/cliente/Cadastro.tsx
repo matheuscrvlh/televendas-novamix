@@ -5,6 +5,7 @@ import Spinner from '../../components/Spinner'
 import { MailIcon, LockIcon } from '../../components/icons'
 import { clienteApiPost } from '../../lib/clienteApi'
 import { ApiError } from '../../lib/api'
+import { maskCpfCnpj, maskTelefone } from '../../lib/mask'
 
 export default function ClienteCadastro() {
     const navigate = useNavigate()
@@ -60,10 +61,11 @@ export default function ClienteCadastro() {
                     <form onSubmit={cadastrar} className='flex flex-col gap-3'>
                         <input
                             type='text'
+                            inputMode='numeric'
                             required
                             placeholder='CNPJ ou CPF'
                             value={cnpjCpf}
-                            onChange={(e) => setCnpjCpf(e.target.value)}
+                            onChange={(e) => setCnpjCpf(maskCpfCnpj(e.target.value))}
                             className={inputClass}
                         />
                         <div className='relative'>
@@ -79,9 +81,10 @@ export default function ClienteCadastro() {
                         </div>
                         <input
                             type='text'
+                            inputMode='numeric'
                             placeholder='Telefone (opcional)'
                             value={telefone}
-                            onChange={(e) => setTelefone(e.target.value)}
+                            onChange={(e) => setTelefone(maskTelefone(e.target.value))}
                             className={inputClass}
                         />
                         <div className='relative'>

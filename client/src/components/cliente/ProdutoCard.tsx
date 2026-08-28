@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { HeartIcon, ImageIcon } from '../icons'
+import QuantidadeInput from './QuantidadeInput'
 import { useCarrinho } from '../../contexts/CarrinhoContext'
 import { useFavoritos } from '../../contexts/FavoritosContext'
 import { formatCurrency, formatNumber } from '../../lib/format'
@@ -96,14 +97,7 @@ export default function ProdutoCard({ produto, className }: ProdutoCardProps) {
             </div>
 
             <div className='mt-3 flex items-center gap-2'>
-                <input
-                    type='number'
-                    min={1}
-                    disabled={semEstoque}
-                    value={quantidade || 1}
-                    onChange={(e) => setQuantidade(Math.max(1, Number(e.target.value)))}
-                    className='w-16 rounded-lg border border-gray-base/30 bg-white px-2 py-1.5 text-sm text-gray-text disabled:opacity-50 dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
-                />
+                <QuantidadeInput value={quantidade} onChange={setQuantidade} disabled={semEstoque} />
                 <button
                     type='button'
                     disabled={semPreco || semEstoque}

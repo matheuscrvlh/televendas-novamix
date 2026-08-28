@@ -15,6 +15,16 @@ button:not(:disabled),
     cursor: pointer;
 }
 
+/* iOS Safari dá zoom automático ao focar em inputs com font-size < 16px.
+   Forçando 16px só em telas pequenas evitamos o zoom sem mudar o tamanho no desktop. */
+@media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
 @theme {
     --color-*: initial;
     --color-white: #ffffff;

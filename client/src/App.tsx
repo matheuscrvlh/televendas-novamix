@@ -1,4 +1,5 @@
-import { Route, Routes } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import CategoriasAdmin from './pages/admin/Categorias'
 import PedidosAdmin from './pages/admin/Pedidos'
@@ -13,9 +14,20 @@ import Favoritos from './pages/cliente/Favoritos'
 import MinhaConta from './pages/cliente/MinhaConta'
 import PedidoDetalhe from './pages/cliente/PedidoDetalhe'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  return null
+}
+
 export default function App() {
   return (
     <>
+      <ScrollToTop />
       <Routes>
         <Route path='/' element={<Loja />}/>
         <Route path='/entrar' element={<ClienteLogin />}/>

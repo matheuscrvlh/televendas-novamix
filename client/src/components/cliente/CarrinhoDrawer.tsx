@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Spinner from '../Spinner'
+import QuantidadeInput from './QuantidadeInput'
 import { CartIcon, CloseIcon, TrashIcon } from '../icons'
 import { useCarrinho } from '../../contexts/CarrinhoContext'
 import { useClienteMe } from '../../hooks/useClienteMe'
@@ -115,14 +116,9 @@ export default function CarrinhoDrawer() {
                                             {formatCurrency(item.precoUnitario)} cada
                                         </p>
                                         <div className='mt-2 flex items-center justify-between gap-3'>
-                                            <input
-                                                type='number'
-                                                min={1}
+                                            <QuantidadeInput
                                                 value={item.quantidade}
-                                                onChange={(e) =>
-                                                    atualizarQuantidade(item.codigoProduto, Number(e.target.value))
-                                                }
-                                                className='w-16 rounded-lg border border-gray-base/30 bg-white px-2 py-1 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                                                onChange={(quantidade) => atualizarQuantidade(item.codigoProduto, quantidade)}
                                             />
                                             <div className='flex items-center gap-2'>
                                                 <span className='text-sm font-semibold tabular-nums text-gray-text dark:text-dark-text'>
