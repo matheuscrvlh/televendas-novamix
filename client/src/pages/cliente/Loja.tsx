@@ -136,13 +136,13 @@ export default function Loja() {
                         produtos={ofertas}
                     />
 
-                    {categorias.length > 0 && (
+                    {categoriasDestaque.length > 0 && (
                         <div className='mt-10'>
                             <h2 className='mb-6 text-xl font-bold uppercase tracking-wide text-gray-text dark:text-dark-text'>
                                 Compre por categoria
                             </h2>
                             <div className='flex flex-wrap justify-center gap-x-8 gap-y-8 sm:justify-start'>
-                                {categorias.slice(0, 3).map((categoria) => (
+                                {categoriasDestaque.slice(0, 4).map((categoria) => (
                                     <button
                                         key={categoria.id}
                                         type='button'
