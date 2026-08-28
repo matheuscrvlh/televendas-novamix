@@ -136,6 +136,15 @@ export default function Loja() {
                         produtos={ofertas}
                     />
 
+                    {categoriasDestaque.slice(0, 1).map((categoria) => (
+                        <ProdutoCarousel
+                            key={categoria.id}
+                            titulo={categoria.nome}
+                            produtos={categoria.produtos}
+                            to={`/?categoria=${categoria.id}`}
+                        />
+                    ))}
+
                     {categoriasDestaque.length > 0 && (
                         <div className='mt-10'>
                             <h2 className='mb-6 text-xl font-bold uppercase tracking-wide text-gray-text dark:text-dark-text'>
@@ -171,6 +180,15 @@ export default function Loja() {
                         </div>
                     )}
 
+                    {categoriasDestaque.slice(1, 2).map((categoria) => (
+                        <ProdutoCarousel
+                            key={categoria.id}
+                            titulo={categoria.nome}
+                            produtos={categoria.produtos}
+                            to={`/?categoria=${categoria.id}`}
+                        />
+                    ))}
+
                     {bannerSecao && (
                         <div className='mt-8 overflow-hidden rounded-xl bg-gray dark:bg-dark-surface-2'>
                             {bannerSecao.link ? (
@@ -191,7 +209,7 @@ export default function Loja() {
                         </div>
                     )}
 
-                    {categoriasDestaque.map((categoria) => (
+                    {categoriasDestaque.slice(2).map((categoria) => (
                         <ProdutoCarousel
                             key={categoria.id}
                             titulo={categoria.nome}
