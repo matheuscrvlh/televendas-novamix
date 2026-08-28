@@ -29,6 +29,11 @@ export default function PedidosAdmin() {
     const [loading, setLoading] = useState(true)
     const [erro, setErro] = useState<string | null>(null)
 
+    const [filtroCliente, setFiltroCliente] = useState('')
+    const [filtroNumero, setFiltroNumero] = useState('')
+    const [filtroValorMin, setFiltroValorMin] = useState('')
+    const [filtroValorMax, setFiltroValorMax] = useState('')
+
     useEffect(() => {
         if (!autorizado) return
 
@@ -40,6 +45,21 @@ export default function PedidosAdmin() {
             .catch((err) => setErro(err.message))
             .finally(() => setLoading(false))
     }, [autorizado, status])
+
+    const pedidosFiltrados = pedidos.filter((pedido) => {
+        if (filtroCliente.trim()) {
+            const termo = filtroCliente.trim().toLowerCase()
+            if (!pedido.razao_social.toLowerCase().includes(termo) && !pedido.email.toLowerCase().includes(termo)) {
+                return false
+            }
+        }
+        if (filtroNumero.trim() && !pedido.id.toLowerCase().includes(filtroNumero.trim().toLowerCase())) {
+            return false
+        }
+        if (filtroValorMin.trim() && pedido.valor_total < Number(filtroValorMin)) return false
+        if (filtroValorMax.trim() && pedido.valor_total > Number(filtroValorMax)) return false
+        return true
+    })
 
     return (
         <PageShell
@@ -79,6 +99,39 @@ export default function PedidosAdmin() {
                 ))}
             </div>
 
+            <div className='mb-4 flex flex-wrap items-center gap-2'>
+                <input
+                    type='text'
+                    value={filtroCliente}
+                    onChange={(e) => setFiltroCliente(e.target.value)}
+                    placeholder='Cliente (nome ou e-mail)'
+                    className='min-w-0 flex-1 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                />
+                <input
+                    type='text'
+                    value={filtroNumero}
+                    onChange={(e) => setFiltroNumero(e.target.value)}
+                    placeholder='Nº do pedido'
+                    className='w-40 shrink-0 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                />
+                <input
+                    type='number'
+                    min={0}
+                    value={filtroValorMin}
+                    onChange={(e) => setFiltroValorMin(e.target.value)}
+                    placeholder='Valor mín.'
+                    className='w-28 shrink-0 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                />
+                <input
+                    type='number'
+                    min={0}
+                    value={filtroValorMax}
+                    onChange={(e) => setFiltroValorMax(e.target.value)}
+                    placeholder='Valor máx.'
+                    className='w-28 shrink-0 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                />
+            </div>
+
             <div className='rounded-xl border border-gray-base/30 bg-white shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 {erro && <p className='p-6 text-sm text-red-base'>{erro}</p>}
 
@@ -88,11 +141,13 @@ export default function PedidosAdmin() {
                     </div>
                 )}
 
-                {!erro && !loading && pedidos.length === 0 && (
-                    <p className='p-6 text-sm text-gray-dark dark:text-dark-text-muted'>Nenhum pedido encontrado.</p>
+                {!erro && !loading && pedidosFiltrados.length === 0 && (
+                    <p className='p-6 text-sm text-gray-dark dark:text-dark-text-muted'>
+                        {pedidos.length === 0 ? 'Nenhum pedido encontrado.' : 'Nenhum pedido encontrado com esses filtros.'}
+                    </p>
                 )}
 
-                {!erro && !loading && pedidos.length > 0 && (
+                {!erro && !loading && pedidosFiltrados.length > 0 && (
                     <div className='overflow-x-auto'>
                         <table className='w-full min-w-max border-collapse text-sm'>
                             <thead>
@@ -112,7 +167,7 @@ export default function PedidosAdmin() {
                                 </tr>
                             </thead>
                             <tbody className='divide-y divide-gray-base/20 dark:divide-dark-border'>
-                                {pedidos.map((pedido) => (
+                                {pedidosFiltrados.map((pedido) => (
                                     <tr key={pedido.id} className='hover:bg-gray/50 dark:hover:bg-dark-surface-2/50'>
                                         <td className='px-4 py-3'>
                                             <Link

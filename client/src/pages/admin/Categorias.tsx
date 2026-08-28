@@ -142,6 +142,13 @@ export default function CategoriasAdmin() {
     const [precosEmEdicao, setPrecosEmEdicao] = useState<Record<number, string>>({})
     const [salvandoCodigo, setSalvandoCodigo] = useState<number | null>(null)
 
+    const [filtroNomeCategoria, setFiltroNomeCategoria] = useState('')
+    const [filtroStatusCategoria, setFiltroStatusCategoria] = useState<'todos' | 'ativo' | 'inativo'>('todos')
+
+    const [filtroBuscaProduto, setFiltroBuscaProduto] = useState('')
+    const [filtroCategoriaProduto, setFiltroCategoriaProduto] = useState('')
+    const [filtroStatusProduto, setFiltroStatusProduto] = useState<'todos' | 'ativo' | 'inativo'>('todos')
+
     function carregarCategorias() {
         if (!autorizado) return
         setLoadingCategorias(true)
@@ -326,6 +333,28 @@ export default function CategoriasAdmin() {
         }
     }
 
+    const categoriasFiltradas = categorias.filter((categoria) => {
+        if (filtroStatusCategoria === 'ativo' && !categoria.ativo) return false
+        if (filtroStatusCategoria === 'inativo' && categoria.ativo) return false
+        if (filtroNomeCategoria.trim() && !categoria.nome.toLowerCase().includes(filtroNomeCategoria.trim().toLowerCase())) {
+            return false
+        }
+        return true
+    })
+
+    const produtosFiltrados = produtos.filter((produto) => {
+        if (filtroStatusProduto === 'ativo' && !produto.ativo) return false
+        if (filtroStatusProduto === 'inativo' && produto.ativo) return false
+        if (filtroCategoriaProduto && !produto.categorias.some((c) => c.id === filtroCategoriaProduto)) return false
+        if (filtroBuscaProduto.trim()) {
+            const termo = filtroBuscaProduto.trim().toLowerCase()
+            const descricao = produto.ciss?.DESCRICAO?.toLowerCase() ?? ''
+            const codigo = String(produto.codigo_produto_ciss)
+            if (!descricao.includes(termo) && !codigo.includes(termo)) return false
+        }
+        return true
+    })
+
     return (
         <PageShell
             isAdmin={autorizado}
@@ -366,6 +395,30 @@ export default function CategoriasAdmin() {
             <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Categorias</span>
 
+                <div className='mt-3 flex flex-wrap items-center gap-2'>
+                    <input
+                        type='text'
+                        value={filtroNomeCategoria}
+                        onChange={(e) => setFiltroNomeCategoria(e.target.value)}
+                        placeholder='Filtrar por nome'
+                        className='min-w-0 flex-1 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                    />
+                    {(['todos', 'ativo', 'inativo'] as const).map((valor) => (
+                        <button
+                            key={valor}
+                            type='button'
+                            onClick={() => setFiltroStatusCategoria(valor)}
+                            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                                filtroStatusCategoria === valor
+                                    ? 'bg-orange-base text-white'
+                                    : 'border border-gray-base/30 text-gray-text hover:border-orange-base dark:border-dark-border dark:text-dark-text'
+                            }`}
+                        >
+                            {valor === 'todos' ? 'Todos' : valor === 'ativo' ? 'Ativo' : 'Inativo'}
+                        </button>
+                    ))}
+                </div>
+
                 {erroCategorias && <p className='mt-2 text-sm text-red-base'>{erroCategorias}</p>}
 
                 {loadingCategorias ? (
@@ -374,12 +427,12 @@ export default function CategoriasAdmin() {
                     </div>
                 ) : (
                     <div className='mt-3 flex flex-col gap-2'>
-                        {categorias.length === 0 && (
+                        {categoriasFiltradas.length === 0 && (
                             <span className='text-sm text-gray-dark dark:text-dark-text-muted'>
-                                Nenhuma categoria criada ainda.
+                                {categorias.length === 0 ? 'Nenhuma categoria criada ainda.' : 'Nenhuma categoria encontrada com esses filtros.'}
                             </span>
                         )}
-                        {categorias.map((categoria) => (
+                        {categoriasFiltradas.map((categoria) => (
                             <CategoriaRow
                                 key={categoria.id}
                                 categoria={categoria}
@@ -528,6 +581,42 @@ export default function CategoriasAdmin() {
             <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
                 <span className='text-sm font-medium text-gray-text dark:text-dark-text'>Produtos cadastrados</span>
 
+                <div className='mt-3 flex flex-wrap items-center gap-2'>
+                    <input
+                        type='text'
+                        value={filtroBuscaProduto}
+                        onChange={(e) => setFiltroBuscaProduto(e.target.value)}
+                        placeholder='Filtrar por nome ou código'
+                        className='min-w-0 flex-1 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                    />
+                    <select
+                        value={filtroCategoriaProduto}
+                        onChange={(e) => setFiltroCategoriaProduto(e.target.value)}
+                        className='shrink-0 rounded-lg border border-gray-base/30 bg-white px-3 py-2 text-sm text-gray-text dark:border-dark-border dark:bg-dark-surface dark:text-dark-text'
+                    >
+                        <option value=''>Todas as categorias</option>
+                        {categorias.map((categoria) => (
+                            <option key={categoria.id} value={categoria.id}>
+                                {categoria.nome}
+                            </option>
+                        ))}
+                    </select>
+                    {(['todos', 'ativo', 'inativo'] as const).map((valor) => (
+                        <button
+                            key={valor}
+                            type='button'
+                            onClick={() => setFiltroStatusProduto(valor)}
+                            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                                filtroStatusProduto === valor
+                                    ? 'bg-orange-base text-white'
+                                    : 'border border-gray-base/30 text-gray-text hover:border-orange-base dark:border-dark-border dark:text-dark-text'
+                            }`}
+                        >
+                            {valor === 'todos' ? 'Todos' : valor === 'ativo' ? 'Ativo' : 'Inativo'}
+                        </button>
+                    ))}
+                </div>
+
                 {erroProdutos && <p className='mt-3 text-sm text-red-base'>{erroProdutos}</p>}
 
                 {loadingProdutos ? (
@@ -536,9 +625,11 @@ export default function CategoriasAdmin() {
                     </div>
                 ) : produtos.length === 0 ? (
                     <p className='mt-3 text-sm text-gray-dark dark:text-dark-text-muted'>Nenhum produto cadastrado ainda.</p>
+                ) : produtosFiltrados.length === 0 ? (
+                    <p className='mt-3 text-sm text-gray-dark dark:text-dark-text-muted'>Nenhum produto encontrado com esses filtros.</p>
                 ) : (
                     <ul className='mt-4 flex flex-col divide-y divide-gray-base/20 dark:divide-dark-border'>
-                        {produtos.map((produto) => {
+                        {produtosFiltrados.map((produto) => {
                             const ciss = produto.ciss
                             const categoriaIdsDoProduto = new Set(produto.categorias.map((c) => c.id))
                             const categoriasDisponiveis = categorias.filter((c) => !categoriaIdsDoProduto.has(c.id))
