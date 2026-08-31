@@ -89,6 +89,19 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
         setSearchParams(proximo, { replace: true })
     }, [searchParams, abrirCarrinho, setSearchParams])
 
+    // No iPhone o bounce-scroll (rubber-band) revela o fundo do <html>/<body> por baixo do
+    // header — deixando laranja aqui evita a "borda branca" quando o usuário puxa a página.
+    useEffect(() => {
+        const originalHtmlBg = document.documentElement.style.backgroundColor
+        const originalBodyBg = document.body.style.backgroundColor
+        document.documentElement.style.backgroundColor = '#EA8006'
+        document.body.style.backgroundColor = '#EA8006'
+        return () => {
+            document.documentElement.style.backgroundColor = originalHtmlBg
+            document.body.style.backgroundColor = originalBodyBg
+        }
+    }, [])
+
     useEffect(() => {
         if (!menuAberto) return
         const originalHtml = document.documentElement.style.overflow
