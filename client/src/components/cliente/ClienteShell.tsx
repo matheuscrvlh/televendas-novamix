@@ -133,31 +133,33 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
     return (
         <div className='min-h-screen w-full bg-gray dark:bg-dark-bg'>
             <header className='sticky top-0 z-40 border-b border-orange-light/40 bg-orange-base'>
-                <div className='bg-white py-1.5 text-center text-xs font-medium text-gray-text dark:bg-dark-surface-2 dark:text-dark-text'>
+                <div className='bg-white py-1 text-center text-[11px] font-medium text-gray-text dark:bg-dark-surface-2 dark:text-dark-text md:py-1.5 md:text-xs'>
                     {textoTopo}
                 </div>
 
-                <div className='mx-auto max-w-6xl px-6 py-3'>
-                    {/* Mobile: hamburger — logo — favoritos/carrinho, busca numa linha abaixo */}
+                <div className='mx-auto max-w-6xl px-4 py-2 md:px-6 md:py-3'>
+                    {/* Mobile: hamburger + logo colados à esquerda — favoritos/carrinho à direita, busca numa linha abaixo */}
                     <div className='flex items-center justify-between gap-2 md:hidden'>
-                        <button
-                            type='button'
-                            onClick={() => setMenuAberto((v) => !v)}
-                            className='rounded-lg p-2 text-white transition hover:bg-white/15'
-                            aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
-                        >
-                            <MenuIcon className='h-6 w-6' />
-                        </button>
+                        <div className='flex items-center gap-1'>
+                            <button
+                                type='button'
+                                onClick={() => setMenuAberto((v) => !v)}
+                                className='rounded-lg p-1.5 text-white transition hover:bg-white/15'
+                                aria-label={menuAberto ? 'Fechar menu' : 'Abrir menu'}
+                            >
+                                <MenuIcon className='h-5 w-5' />
+                            </button>
 
-                        <Logo compact to='/' />
+                            <Logo compact to='/' />
+                        </div>
 
                         <div className='flex items-center gap-1'>
                             <NavLink
                                 to='/favoritos'
-                                className='relative rounded-lg p-2 text-white transition hover:bg-white/15'
+                                className='relative rounded-lg p-1.5 text-white transition hover:bg-white/15'
                                 aria-label='Favoritos'
                             >
-                                <HeartIcon className='h-6 w-6' />
+                                <HeartIcon className='h-5 w-5' />
                                 {favoritos.length > 0 && (
                                     <span className='absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-base px-1 text-[10px] font-semibold text-white'>
                                         {favoritos.length}
@@ -168,10 +170,10 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                             <button
                                 type='button'
                                 onClick={abrirCarrinho}
-                                className='relative rounded-lg p-2 text-white transition hover:bg-white/15'
+                                className='relative rounded-lg p-1.5 text-white transition hover:bg-white/15'
                                 aria-label='Meu carrinho'
                             >
-                                <CartIcon className='h-6 w-6' />
+                                <CartIcon className='h-5 w-5' />
                                 {qtdCarrinho > 0 && (
                                     <span className='absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-base px-1 text-[10px] font-semibold text-white'>
                                         {qtdCarrinho}
@@ -181,14 +183,14 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
                         </div>
                     </div>
 
-                    <form onSubmit={buscar} className='mt-3 md:hidden'>
+                    <form onSubmit={buscar} className='mt-2 md:hidden'>
                         <div className='relative'>
                             <input
                                 type='text'
                                 value={termoBusca}
                                 onChange={(e) => setTermoBusca(e.target.value)}
                                 placeholder='O que você procura?'
-                                className='w-full rounded-lg border border-gray-base/30 bg-gray px-4 py-2.5 pr-10 text-sm text-gray-text focus:border-orange-base focus:outline-none dark:border-dark-border dark:bg-dark-surface-2 dark:text-dark-text'
+                                className='w-full rounded-lg border border-gray-base/30 bg-gray px-4 py-2 pr-10 text-sm text-gray-text focus:border-orange-base focus:outline-none dark:border-dark-border dark:bg-dark-surface-2 dark:text-dark-text'
                             />
                             <button
                                 type='submit'
@@ -202,7 +204,7 @@ export default function ClienteShell({ children, requireAuth = true, showBanner 
 
                     {/* Desktop: logo — busca — nav — conta */}
                     <div className='hidden items-center gap-4 md:flex'>
-                        <Logo compact to='/' />
+                        <Logo compact to='/' className='md:mr-3' />
 
                         <form onSubmit={buscar} className='flex-1'>
                             <div className='relative'>

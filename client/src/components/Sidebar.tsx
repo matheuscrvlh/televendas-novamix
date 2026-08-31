@@ -65,7 +65,9 @@ export default function Sidebar({ isAdmin }: SidebarProps) {
                     isOpen ? 'translate-x-0' : '-translate-x-full'
                 }`}
             >
-                <Logo compact to='/dashboard' />
+                <div className='p-4'>
+                    <Logo compact to='/dashboard' variant='admin' />
+                </div>
 
                 <nav className='mt-8 flex flex-1 flex-col gap-2 overflow-y-auto px-4'>
                     <NavLink

@@ -9,7 +9,7 @@ services:
     environment:
       SERVER_PORT: "3000"
     volumes:
-      - server_uploads:/app/uploads
+      - ./server/uploads:/app/uploads
     restart: unless-stopped
 
   client:
@@ -21,6 +21,3 @@ services:
     ports:
       - "8089:80"
     restart: unless-stopped
-
-volumes:
-  server_uploads:
