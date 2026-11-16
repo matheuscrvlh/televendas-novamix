@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
-import { querySupabase } from '../database/supabase.database'
+import { querySupabase, withTransaction } from '../database/supabase.database'
 import { sqlComVendedores as sqlComVendedoresBase } from '../services/vendedores.service'
 
 interface PeriodoQuery {
@@ -186,7 +186,21 @@ function limitesDoMes(mes: string) {
     return { inicio: `${mes}-01`, fim: `${mes}-${String(ultimoDia).padStart(2, '0')}` }
 }
 
-// Meta do mês (Supabase) + quanto já foi faturado no mês inteiro (CISS), para o card de faturamento.
+const TIPOS_META = ['faturamento', 'faturamento_super', 'clientes'] as const
+type TipoMeta = (typeof TIPOS_META)[number]
+type Metas = Record<TipoMeta, number | null>
+
+function montarMetas(linhas: { tipo: string; valor: string }[]): Metas {
+    const metas: Metas = { faturamento: null, faturamento_super: null, clientes: null }
+    for (const linha of linhas) {
+        if ((TIPOS_META as readonly string[]).includes(linha.tipo)) metas[linha.tipo as TipoMeta] = Number(linha.valor)
+    }
+    return metas
+}
+
+class MetaInvalida extends Error {}
+
+// Metas do mês (Supabase) + o realizado no mês inteiro (CISS): faturamento e clientes que compraram.
 export async function getMeta(req: FastifyRequest, res: FastifyReply) {
     const permission = await checkPermission(req, res)
     if (!permission) return
@@ -198,49 +212,112 @@ export async function getMeta(req: FastifyRequest, res: FastifyReply) {
     }
 
     const { inicio, fim } = limitesDoMes(mes)
-    const kpisSql = await sqlComVendedores('kpis_periodo.sql')
+    const [kpisSql, ativosSql] = await Promise.all([
+        sqlComVendedores('kpis_periodo.sql'),
+        sqlComVendedores('clientes_ativos_total.sql'),
+    ])
 
     const buscarRealizado = async () => {
         const conn = await connCiss()
         try {
-            const [kpis] = await conn.query(kpisSql, [inicio, fim])
-            return Number(kpis?.FATURAMENTO_TOTAL ?? 0)
+            const [kpis, ativos] = await Promise.all([
+                conn.query(kpisSql, [inicio, fim]),
+                conn.query(ativosSql, [inicio, fim]),
+            ])
+            return {
+                faturamento: Number(kpis[0]?.FATURAMENTO_TOTAL ?? 0),
+                clientes: Number(ativos[0]?.CLIENTES_ATIVOS ?? 0),
+            }
         } finally {
             await conn.close()
         }
     }
 
-    const [metas, realizado] = await Promise.all([
-        querySupabase<{ valor: string }>('SELECT valor FROM televendas.metas_mensais WHERE mes = $1', [inicio]),
+    const [linhas, realizado] = await Promise.all([
+        querySupabase<{ tipo: string; valor: string }>(
+            'SELECT tipo, valor FROM televendas.metas_mensais WHERE mes = $1',
+            [inicio]
+        ),
         buscarRealizado(),
     ])
 
-    res.send({ mes, meta: metas[0] ? Number(metas[0].valor) : null, realizado })
+    res.send({ mes, metas: montarMetas(linhas), realizado })
 }
 
-// Qualquer usuária com acesso ao televendas pode definir a meta (não só admin).
+// Salva uma ou mais metas do mês de uma vez. Valor null apaga a meta daquele tipo.
+// Qualquer usuária com acesso ao televendas pode definir (não só admin).
 export async function putMeta(req: FastifyRequest, res: FastifyReply) {
     const permission = await checkPermission(req, res)
     if (!permission) return
 
-    const { mes, valor } = req.body as { mes?: string; valor?: number }
+    const { mes, metas } = req.body as { mes?: string; metas?: Record<string, unknown> }
     if (!mes || !MES_REGEX.test(mes)) {
         res.code(400).send({ error: 'Informe o mês no formato YYYY-MM.' })
         return
     }
-    if (typeof valor !== 'number' || !Number.isFinite(valor) || valor <= 0 || valor >= 1e13) {
-        res.code(400).send({ error: 'Informe um valor de meta maior que zero.' })
+    if (!metas || typeof metas !== 'object' || Object.keys(metas).length === 0) {
+        res.code(400).send({ error: 'Informe ao menos uma meta.' })
         return
     }
 
-    const { inicio } = limitesDoMes(mes)
-    const [meta] = await querySupabase<{ valor: string }>(
-        `INSERT INTO televendas.metas_mensais (mes, valor)
-         VALUES ($1, $2)
-         ON CONFLICT (mes) DO UPDATE SET valor = $2, atualizado_em = now()
-         RETURNING valor`,
-        [inicio, Math.round(valor * 100) / 100]
-    )
+    const alteracoes: [TipoMeta, number | null][] = []
+    for (const [tipo, valor] of Object.entries(metas)) {
+        if (!(TIPOS_META as readonly string[]).includes(tipo)) {
+            res.code(400).send({ error: `Tipo de meta desconhecido: ${tipo}.` })
+            return
+        }
+        if (valor !== null && (typeof valor !== 'number' || !Number.isFinite(valor) || valor <= 0 || valor >= 1e13)) {
+            res.code(400).send({ error: 'A meta precisa ser um valor maior que zero.' })
+            return
+        }
+        if (tipo === 'clientes' && valor !== null && !Number.isInteger(valor)) {
+            res.code(400).send({ error: 'A meta de clientes precisa ser um número inteiro.' })
+            return
+        }
+        alteracoes.push([tipo as TipoMeta, valor === null ? null : Math.round(valor * 100) / 100])
+    }
 
-    res.send({ mes, meta: Number(meta.valor) })
+    const { inicio } = limitesDoMes(mes)
+    try {
+        const resultado = await withTransaction(async (query) => {
+            for (const [tipo, valor] of alteracoes) {
+                if (valor === null) {
+                    await query('DELETE FROM televendas.metas_mensais WHERE mes = $1 AND tipo = $2', [inicio, tipo])
+                } else {
+                    await query(
+                        `INSERT INTO televendas.metas_mensais (mes, tipo, valor)
+                         VALUES ($1, $2, $3)
+                         ON CONFLICT (mes, tipo) DO UPDATE SET valor = $3, atualizado_em = now()`,
+                        [inicio, tipo, valor]
+                    )
+                }
+            }
+
+            const final = montarMetas(
+                await query<{ tipo: string; valor: string }>(
+                    'SELECT tipo, valor FROM televendas.metas_mensais WHERE mes = $1',
+                    [inicio]
+                )
+            )
+            if (final.faturamento_super !== null && final.faturamento === null) {
+                throw new MetaInvalida('Defina a meta de faturamento antes da supermeta.')
+            }
+            if (
+                final.faturamento_super !== null &&
+                final.faturamento !== null &&
+                final.faturamento_super <= final.faturamento
+            ) {
+                throw new MetaInvalida('A supermeta precisa ser maior que a meta.')
+            }
+            return final
+        })
+
+        res.send({ mes, metas: resultado })
+    } catch (err) {
+        if (err instanceof MetaInvalida) {
+            res.code(400).send({ error: err.message })
+            return
+        }
+        throw err
+    }
 }

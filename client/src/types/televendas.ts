@@ -73,9 +73,14 @@ export interface HistoricoCliente {
     pedidos: PedidoHistoricoCliente[]
 }
 
-/** Meta de faturamento do mês e quanto já foi faturado no mês inteiro. */
-export interface MetaMes {
+/** faturamento = meta, faturamento_super = supermeta (vale depois que a meta é batida), clientes = clientes ativos no mês. */
+export type TipoMeta = 'faturamento' | 'faturamento_super' | 'clientes'
+
+export type Metas = Record<TipoMeta, number | null>
+
+/** Metas do mês e o realizado no mês inteiro (não depende do filtro de datas). */
+export interface MetasMes {
     mes: string
-    meta: number | null
-    realizado: number
+    metas: Metas
+    realizado: { faturamento: number; clientes: number }
 }

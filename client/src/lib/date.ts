@@ -42,3 +42,10 @@ export function getPresetRange(preset: DatePreset): { inicio: string; fim: strin
             return { inicio: toISODate(startOfMonth(hoje)), fim: toISODate(hoje) }
     }
 }
+
+/** "2026-11" -> "novembro" (ou "novembro/2025" se não for o ano atual). */
+export function nomeDoMes(mes: string) {
+    const [ano, numeroMes] = mes.split('-').map(Number)
+    const nome = new Date(ano, numeroMes - 1, 1).toLocaleString('pt-BR', { month: 'long' })
+    return ano === new Date().getFullYear() ? nome : `${nome}/${ano}`
+}

@@ -7,11 +7,12 @@ import DateRangeFilter from '../components/DateRangeFilter'
 import ProdutoThumbnail from '../components/ProdutoThumbnail'
 import ClienteItensModal from '../components/ClienteItensModal'
 import ClienteHistoricoModal from '../components/ClienteHistoricoModal'
-import MetaMesBloco from '../components/MetaMesBloco'
+import MetaBloco from '../components/MetaBloco'
 import { useMe } from '../hooks/useMe'
 import { useTelevendas } from '../hooks/useTelevendas'
+import { useMetasMes } from '../hooks/useMetasMes'
 import { formatCurrency, formatNumber, formatPercent, formatDate } from '../lib/format'
-import { getPresetRange } from '../lib/date'
+import { getPresetRange, nomeDoMes } from '../lib/date'
 import type { VisaoGeral, ClienteResumo, ClienteSemComprar, TopCliente, TopProduto } from '../types/televendas'
 
 // Quadro "Clientes que mais compraram no período não estão sendo vistos há tempo": desligado por enquanto.
@@ -39,6 +40,11 @@ export default function Dashboard() {
     const topClientes = useTelevendas<TopCliente[]>('/televendas/top-clientes', params, habilitado)
     const topProdutos = useTelevendas<TopProduto[]>('/televendas/top-produtos', params, habilitado)
 
+    // Metas são sempre do mês da data final do filtro e o progresso usa o mês inteiro.
+    const mesMeta = fim.slice(0, 7)
+    const nomeMes = nomeDoMes(mesMeta)
+    const metasMes = useMetasMes(mesMeta, habilitado)
+
     return (
         <PageShell
             isAdmin={me?.isAdmin ?? false}
@@ -57,8 +63,19 @@ export default function Dashboard() {
                     loading={visaoGeral.loading}
                     erro={visaoGeral.erro}
                 >
-                    {/* Meta do mês da data final do filtro; key reinicia o bloco (edição, valor salvo) ao trocar de mês. */}
-                    <MetaMesBloco key={fim.slice(0, 7)} mes={fim.slice(0, 7)} habilitado={habilitado} />
+                    <MetaBloco
+                        key={`faturamento-${mesMeta}`}
+                        nomeMes={nomeMes}
+                        formato='moeda'
+                        meta={metasMes.metas?.faturamento ?? null}
+                        supermeta={metasMes.metas?.faturamento_super ?? null}
+                        realizado={metasMes.realizado?.faturamento ?? 0}
+                        loading={metasMes.loading}
+                        erro={metasMes.erro}
+                        onSalvar={({ meta, supermeta }) =>
+                            metasMes.salvar({ faturamento: meta, faturamento_super: supermeta })
+                        }
+                    />
                 </StatCard>
                 <StatCard
                     titulo='Clientes ativos'
@@ -66,7 +83,18 @@ export default function Dashboard() {
                     subtitulo='compraram no período'
                     loading={visaoGeral.loading}
                     erro={visaoGeral.erro}
-                />
+                >
+                    <MetaBloco
+                        key={`clientes-${mesMeta}`}
+                        nomeMes={nomeMes}
+                        formato='clientes'
+                        meta={metasMes.metas?.clientes ?? null}
+                        realizado={metasMes.realizado?.clientes ?? 0}
+                        loading={metasMes.loading}
+                        erro={metasMes.erro}
+                        onSalvar={({ meta }) => metasMes.salvar({ clientes: meta })}
+                    />
+                </StatCard>
                 <StatCard
                     titulo='Produtos vendidos'
                     valor={formatNumber(visaoGeral.data?.PRODUTOS_VENDIDOS ?? 0)}
