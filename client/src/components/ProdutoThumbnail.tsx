@@ -22,6 +22,7 @@ export default function ProdutoThumbnail({ codigoProduto, descricao, className =
                     src={produtoImagemUrl(codigoProduto)}
                     alt={descricao}
                     loading='lazy'
+                    decoding='async'
                     className='h-full w-full object-contain'
                     onError={() => setSemFoto(true)}
                 />

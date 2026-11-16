@@ -24,9 +24,10 @@ type ClientesPanelProps = {
     clientes: ClienteResumo[]
     loading: boolean
     erro: string | null
+    onSelecionar: (cliente: ClienteResumo) => void
 }
 
-export default function ClientesPanel({ clientes, loading, erro }: ClientesPanelProps) {
+export default function ClientesPanel({ clientes, loading, erro, onSelecionar }: ClientesPanelProps) {
     const [busca, setBusca] = useState('')
     const [tab, setTab] = useState<Tab>('todos')
 
@@ -97,19 +98,28 @@ export default function ClientesPanel({ clientes, loading, erro }: ClientesPanel
                         {filtrados.map((c) => {
                             const status = classificarCliente(c.DIAS_SEM_COMPRAR, c.FLAGINATIVO)
                             return (
-                                <li key={c.IDCLIFOR} className='flex items-start gap-2 px-4 py-3'>
-                                    <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${STATUS_COR[status]}`} />
-                                    <div className='min-w-0 flex-1'>
-                                        <p className='truncate text-sm font-medium text-gray-text dark:text-dark-text'>
-                                            {c.CLIENTE}
-                                        </p>
-                                        <p className='text-xs text-gray-dark dark:text-dark-text-muted'>
-                                            {c.PEDIDOS} pedido{c.PEDIDOS === 1 ? '' : 's'} · {c.DIAS_SEM_COMPRAR}d s/comprar
-                                        </p>
-                                    </div>
-                                    <span className='shrink-0 text-sm font-semibold tabular-nums text-gray-text dark:text-dark-text'>
-                                        {formatCurrency(c.TOTAL_COMPRADO)}
-                                    </span>
+                                <li key={c.IDCLIFOR}>
+                                    <button
+                                        type='button'
+                                        onClick={() => onSelecionar(c)}
+                                        title={`Ver histórico de ${c.CLIENTE}`}
+                                        className='group flex w-full items-start gap-2.5 px-4 py-3 text-left transition-colors hover:bg-orange-base/5 focus-visible:bg-orange-base/5 focus-visible:outline-none'
+                                    >
+                                        <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${STATUS_COR[status]}`} />
+                                        <div className='min-w-0 flex-1'>
+                                            <p className='line-clamp-2 wrap-break-word text-sm font-medium leading-snug text-gray-text group-hover:text-orange-base dark:text-dark-text dark:group-hover:text-orange-light'>
+                                                {c.CLIENTE}
+                                            </p>
+                                            <div className='mt-1 flex items-baseline justify-between gap-2'>
+                                                <span className='text-xs text-gray-dark dark:text-dark-text-muted'>
+                                                    {c.PEDIDOS} pedido{c.PEDIDOS === 1 ? '' : 's'} · {c.DIAS_SEM_COMPRAR}d s/comprar
+                                                </span>
+                                                <span className='shrink-0 text-sm font-semibold tabular-nums text-gray-text dark:text-dark-text'>
+                                                    {formatCurrency(c.TOTAL_COMPRADO)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </button>
                                 </li>
                             )
                         })}

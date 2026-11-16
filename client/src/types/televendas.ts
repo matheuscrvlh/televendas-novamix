@@ -26,6 +26,7 @@ export interface ClienteSemComprar {
 }
 
 export interface TopCliente {
+    IDCLIFOR: number
     CLIENTE: string
     TOTAL: number
     PEDIDOS: number
@@ -36,4 +37,38 @@ export interface TopProduto {
     IDPRODUTO: number
     PRODUTO: string
     TOTAL: number
+}
+
+/** Um produto dentro de uma compra do cliente (já somado se apareceu em mais de uma linha). */
+export interface ItemCompradoCliente {
+    IDEMPRESA: number
+    IDPLANILHA: number
+    DTMOVIMENTO: string
+    IDSUBPRODUTO: number
+    PRODUTO: string
+    QUANTIDADE: number
+    TOTAL: number
+}
+
+export interface ProdutoHistoricoCliente {
+    IDSUBPRODUTO: number
+    PRODUTO: string
+    /** Em quantas compras diferentes o produto apareceu. */
+    VEZES: number
+    QUANTIDADE: number
+    TOTAL: number
+    ULTIMA_COMPRA: string
+}
+
+export interface PedidoHistoricoCliente {
+    IDEMPRESA: number
+    IDPLANILHA: number
+    DTMOVIMENTO: string
+    ITENS: number
+    TOTAL: number
+}
+
+export interface HistoricoCliente {
+    produtos: ProdutoHistoricoCliente[]
+    pedidos: PedidoHistoricoCliente[]
 }

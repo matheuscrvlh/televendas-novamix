@@ -18,3 +18,7 @@ export function formatDate(value: string) {
     const [ano, mes, dia] = value.split('-')
     return `${dia}/${mes}/${ano}`
 }
+
+export function formatQuantidade(value: number) {
+    return value.toLocaleString('pt-BR', { maximumFractionDigits: 3 })
+}

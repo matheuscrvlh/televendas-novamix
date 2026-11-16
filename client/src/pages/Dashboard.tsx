@@ -5,6 +5,8 @@ import ClientesPanel from '../components/ClientesPanel'
 import DataTable from '../components/DataTable'
 import DateRangeFilter from '../components/DateRangeFilter'
 import ProdutoThumbnail from '../components/ProdutoThumbnail'
+import ClienteItensModal from '../components/ClienteItensModal'
+import ClienteHistoricoModal from '../components/ClienteHistoricoModal'
 import { useMe } from '../hooks/useMe'
 import { useTelevendas } from '../hooks/useTelevendas'
 import { formatCurrency, formatNumber, formatPercent, formatDate } from '../lib/format'
@@ -16,6 +18,8 @@ export default function Dashboard() {
 
     const [inicio, setInicio] = useState(() => getPresetRange('mes').inicio)
     const [fim, setFim] = useState(() => getPresetRange('mes').fim)
+    const [clienteItens, setClienteItens] = useState<TopCliente | null>(null)
+    const [clienteHistorico, setClienteHistorico] = useState<ClienteResumo | null>(null)
 
     const habilitado = me !== null
     const params = { inicio, fim }
@@ -68,7 +72,12 @@ export default function Dashboard() {
             </div>
 
             <div className='mt-6 flex flex-col gap-6 lg:flex-row lg:items-start'>
-                <ClientesPanel clientes={clientes.data ?? []} loading={clientes.loading} erro={clientes.erro} />
+                <ClientesPanel
+                    clientes={clientes.data ?? []}
+                    loading={clientes.loading}
+                    erro={clientes.erro}
+                    onSelecionar={setClienteHistorico}
+                />
 
                 <div className='flex min-w-0 flex-1 flex-col gap-6'>
                     <DataTable
@@ -110,7 +119,20 @@ export default function Dashboard() {
                             rows={(topClientes.data ?? []).map((r, i) => ({ ...r, POSICAO: i + 1 }))}
                             columns={[
                                 { key: 'pos', label: '#', render: (r) => String(r.POSICAO) },
-                                { key: 'cliente', label: 'Cliente', render: (r) => r.CLIENTE },
+                                {
+                                    key: 'cliente',
+                                    label: 'Cliente',
+                                    render: (r) => (
+                                        <button
+                                            type='button'
+                                            onClick={() => setClienteItens(r)}
+                                            title='Ver itens comprados no período'
+                                            className='text-left font-medium text-gray-text underline-offset-2 hover:text-orange-base hover:underline dark:text-dark-text dark:hover:text-orange-light'
+                                        >
+                                            {r.CLIENTE}
+                                        </button>
+                                    ),
+                                },
                                 { key: 'total', label: 'Total', align: 'right', render: (r) => formatCurrency(r.TOTAL) },
                                 { key: 'pedidos', label: 'Pedidos', align: 'right', render: (r) => formatNumber(r.PEDIDOS) },
                                 {
@@ -150,6 +172,14 @@ export default function Dashboard() {
                     </div>
                 </div>
             </div>
+
+            <ClienteItensModal cliente={clienteItens} inicio={inicio} fim={fim} onClose={() => setClienteItens(null)} />
+            {/* key: cada cliente abre o histórico do zero (aba, busca e compras abertas). */}
+            <ClienteHistoricoModal
+                key={clienteHistorico?.IDCLIFOR ?? 'nenhum'}
+                cliente={clienteHistorico}
+                onClose={() => setClienteHistorico(null)}
+            />
         </PageShell>
     )
 }
