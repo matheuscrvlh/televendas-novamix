@@ -13,6 +13,10 @@ import { formatCurrency, formatNumber, formatPercent, formatDate } from '../lib/
 import { getPresetRange } from '../lib/date'
 import type { VisaoGeral, ClienteResumo, ClienteSemComprar, TopCliente, TopProduto } from '../types/televendas'
 
+// Quadro "Clientes que mais compraram no período não estão sendo vistos há tempo": desligado por enquanto.
+// Para voltar, troque para true (a rota e a consulta continuam no servidor).
+const MOSTRAR_CLIENTES_SEM_COMPRAR = false
+
 export default function Dashboard() {
     const { me, loading: loadingMe, error: meError } = useMe()
 
@@ -26,7 +30,11 @@ export default function Dashboard() {
 
     const visaoGeral = useTelevendas<VisaoGeral>('/televendas/visao-geral', params, habilitado)
     const clientes = useTelevendas<ClienteResumo[]>('/televendas/clientes', params, habilitado)
-    const semComprar = useTelevendas<ClienteSemComprar[]>('/televendas/clientes-sem-comprar', params, habilitado)
+    const semComprar = useTelevendas<ClienteSemComprar[]>(
+        '/televendas/clientes-sem-comprar',
+        params,
+        habilitado && MOSTRAR_CLIENTES_SEM_COMPRAR
+    )
     const topClientes = useTelevendas<TopCliente[]>('/televendas/top-clientes', params, habilitado)
     const topProdutos = useTelevendas<TopProduto[]>('/televendas/top-produtos', params, habilitado)
 
@@ -80,35 +88,37 @@ export default function Dashboard() {
                 />
 
                 <div className='flex min-w-0 flex-1 flex-col gap-6'>
-                    <DataTable
-                        titulo='Clientes que mais compraram no período não estão sendo vistos há tempo'
-                        rodape='Clientes relevantes (faturamento acima de R$ 5.000) sem compra recente — priorize a ligação.'
-                        loading={semComprar.loading}
-                        erro={semComprar.erro}
-                        rows={semComprar.data ?? []}
-                        columns={[
-                            { key: 'cliente', label: 'Cliente', render: (r) => r.CLIENTE },
-                            {
-                                key: 'total',
-                                label: 'Total comprado',
-                                align: 'right',
-                                render: (r) => formatCurrency(r.TOTAL_COMPRADO),
-                            },
-                            {
-                                key: 'ultima',
-                                label: 'Última compra',
-                                align: 'right',
-                                render: (r) => formatDate(r.ULTIMA_COMPRA),
-                            },
-                            {
-                                key: 'dias',
-                                label: 'Sem comprar',
-                                align: 'right',
-                                render: (r) => `${r.DIAS_SEM_COMPRAR}d`,
-                                destaque: (r) => r.DIAS_SEM_COMPRAR > 90,
-                            },
-                        ]}
-                    />
+                    {MOSTRAR_CLIENTES_SEM_COMPRAR && (
+                        <DataTable
+                            titulo='Clientes que mais compraram no período não estão sendo vistos há tempo'
+                            rodape='Clientes relevantes (faturamento acima de R$ 5.000) sem compra recente — priorize a ligação.'
+                            loading={semComprar.loading}
+                            erro={semComprar.erro}
+                            rows={semComprar.data ?? []}
+                            columns={[
+                                { key: 'cliente', label: 'Cliente', render: (r) => r.CLIENTE },
+                                {
+                                    key: 'total',
+                                    label: 'Total comprado',
+                                    align: 'right',
+                                    render: (r) => formatCurrency(r.TOTAL_COMPRADO),
+                                },
+                                {
+                                    key: 'ultima',
+                                    label: 'Última compra',
+                                    align: 'right',
+                                    render: (r) => formatDate(r.ULTIMA_COMPRA),
+                                },
+                                {
+                                    key: 'dias',
+                                    label: 'Sem comprar',
+                                    align: 'right',
+                                    render: (r) => `${r.DIAS_SEM_COMPRAR}d`,
+                                    destaque: (r) => r.DIAS_SEM_COMPRAR > 90,
+                                },
+                            ]}
+                        />
+                    )}
 
                     <div className='flex flex-col gap-6'>
                         <DataTable
