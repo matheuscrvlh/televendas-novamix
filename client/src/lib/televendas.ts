@@ -14,3 +14,9 @@ export function classificarCliente(diasSemComprar: number, flagInativo: string):
     if (diasSemComprar <= LIMITE_ATENCAO_DIAS) return 'atencao'
     return 'inativo'
 }
+
+/**
+ * Meta de margem de lucro do televendas (margem líquida, calculada com o lucro gravado pelo CISS).
+ * Fixa por enquanto: -5%. -0.05 = -5%.
+ */
+export const META_MARGEM = -0.05

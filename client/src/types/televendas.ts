@@ -4,6 +4,10 @@ export interface VisaoGeral {
     DEVOLUCOES_VALOR: number
     DEVOLUCOES_PERCENTUAL: number
     CLIENTES_ATIVOS: number
+    /** Lucro das vendas menos o das devoluções (VALLUCRO do CISS). */
+    LUCRO_LIQUIDO: number
+    /** Lucro líquido ÷ (faturamento - devoluções). null se não houve faturamento. -0.05 = -5%. */
+    MARGEM_PERCENTUAL: number | null
 }
 
 export interface ClienteResumo {

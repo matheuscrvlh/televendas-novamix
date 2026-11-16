@@ -9,7 +9,26 @@ WITH MOVIMENTOS AS (
         CASE
             WHEN OI.TIPOMOVIMENTO = 'E' THEN EA.VALTOTLIQUIDO
             ELSE 0
-        END AS VALORDEVOLUCAO
+        END AS VALORDEVOLUCAO,
+        -- Lucro com a mesma regra do financeiro-novamix: VALLUCRO (lucro por unidade gravado pelo CISS)
+        -- x quantidade; kit soma o lucro dos componentes; devolução entra negativa.
+        -- Linhas de componente de kit ficam 0 porque o lucro delas já entra pelo kit.
+        CASE WHEN OI.TIPOMOVIMENTO = 'E' THEN -1 ELSE 1 END *
+        CASE
+            WHEN COALESCE(EA.NUMSEQUENCIAKIT,0) > 0 THEN 0
+            WHEN EA.TIPOBAIXAMESTRE = 'K' THEN
+                (SELECT COALESCE(SUM(COALESCE(EST.VALLUCRO,0) * EST.QTDPRODUTO), 0)
+                 FROM DBA.ESTOQUE_ANALITICO EST
+                 WHERE COALESCE(EST.NUMSEQUENCIAKIT,0) = EA.NUMSEQUENCIA
+                   AND EST.IDPLANILHA = EA.IDPLANILHA
+                   AND EST.IDSUBPRODUTO IN (
+                       SELECT PK.IDSUBPRODUTO
+                       FROM DBA.PRODUTO_KIT PK
+                       WHERE PK.IDPRODUTOKIT = EA.IDPRODUTO
+                         AND PK.IDSUBPRODUTOKIT = EA.IDSUBPRODUTO
+                   ))
+            ELSE COALESCE(EA.VALLUCRO,0) * EA.QTDPRODUTO
+        END AS LUCRO
     FROM DBA.ESTOQUE_ANALITICO EA
     INNER JOIN DBA.NOTAS_ENTRADA_SAIDA NES
         ON NES.IDEMPRESA = EA.IDEMPRESA
@@ -35,6 +54,7 @@ TOTAIS AS (
     SELECT
         CAST(SUM(VALORVENDA) AS DECIMAL(15,6)) AS TOTAL_VENDA,
         CAST(SUM(VALORDEVOLUCAO) AS DECIMAL(15,6)) AS TOTAL_DEVOL,
+        CAST(SUM(LUCRO) AS DECIMAL(15,6)) AS TOTAL_LUCRO,
         COUNT(DISTINCT IDPRODUTO) AS PRODUTOS_VENDIDOS
     FROM MOVIMENTOS
 )
@@ -45,5 +65,11 @@ SELECT
     CASE
         WHEN TOTAL_VENDA = 0 THEN 0
         ELSE CAST(TOTAL_DEVOL / TOTAL_VENDA AS NUMERIC(9,4))
-    END AS DEVOLUCOES_PERCENTUAL
+    END AS DEVOLUCOES_PERCENTUAL,
+    -- Lucro líquido (vendas - devoluções) e margem sobre o faturamento líquido.
+    CAST(TOTAL_LUCRO AS NUMERIC(15,2)) AS LUCRO_LIQUIDO,
+    CASE
+        WHEN TOTAL_VENDA - TOTAL_DEVOL = 0 THEN NULL
+        ELSE CAST(TOTAL_LUCRO / (TOTAL_VENDA - TOTAL_DEVOL) AS NUMERIC(9,4))
+    END AS MARGEM_PERCENTUAL
 FROM TOTAIS;

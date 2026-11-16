@@ -8,6 +8,7 @@ import ProdutoThumbnail from '../components/ProdutoThumbnail'
 import ClienteItensModal from '../components/ClienteItensModal'
 import ClienteHistoricoModal from '../components/ClienteHistoricoModal'
 import MetaBloco from '../components/MetaBloco'
+import MetaMargemBloco from '../components/MetaMargemBloco'
 import { useMe } from '../hooks/useMe'
 import { useTelevendas } from '../hooks/useTelevendas'
 import { useMetasMes } from '../hooks/useMetasMes'
@@ -55,7 +56,7 @@ export default function Dashboard() {
             subtitulo='Histórico de vendas e oportunidades por cliente.'
             filtros={<DateRangeFilter inicio={inicio} fim={fim} onChangeInicio={setInicio} onChangeFim={setFim} />}
         >
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
                 <StatCard
                     titulo='Faturamento total'
                     valor={formatCurrency(visaoGeral.data?.FATURAMENTO_TOTAL ?? 0)}
@@ -109,6 +110,17 @@ export default function Dashboard() {
                     loading={visaoGeral.loading}
                     erro={visaoGeral.erro}
                 />
+                <StatCard
+                    titulo='Margem de lucro'
+                    valor={
+                        visaoGeral.data?.MARGEM_PERCENTUAL == null ? '—' : formatPercent(visaoGeral.data.MARGEM_PERCENTUAL)
+                    }
+                    subtitulo={`resultado de ${formatCurrency(visaoGeral.data?.LUCRO_LIQUIDO ?? 0)}`}
+                    loading={visaoGeral.loading}
+                    erro={visaoGeral.erro}
+                >
+                    {!visaoGeral.loading && <MetaMargemBloco margem={visaoGeral.data?.MARGEM_PERCENTUAL ?? null} />}
+                </StatCard>
             </div>
 
             <div className='mt-6 flex flex-col gap-6 lg:flex-row lg:items-start'>

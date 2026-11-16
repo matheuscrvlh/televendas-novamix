@@ -253,8 +253,8 @@ function Progresso({
 
     return (
         <>
-            <div className='flex items-center justify-between gap-2'>
-                <span className={rotuloClass}>{titulo}</span>
+            <div className='flex items-start justify-between gap-2'>
+                <span className={`${rotuloClass} min-w-0`}>{titulo}</span>
                 <button
                     type='button'
                     onClick={onEditar}
@@ -266,21 +266,10 @@ function Progresso({
                 </button>
             </div>
 
-            <div className='flex items-center justify-between gap-2'>
-                <p className='text-sm font-semibold tabular-nums text-gray-text dark:text-dark-text'>
-                    {formatar(alvo, formato)}
-                    {formato === 'clientes' && <span className='font-normal text-gray-dark/70'> clientes</span>}
-                </p>
-                {naSupermeta && (
-                    <span
-                        title={`Meta de ${formatar(meta, formato)} batida`}
-                        className='inline-flex shrink-0 items-center gap-0.5 rounded-full bg-green-base/15 px-1.5 py-0.5 text-[10px] font-semibold text-green-base'
-                    >
-                        <CheckIcon className='h-2.5 w-2.5' />
-                        Meta batida
-                    </span>
-                )}
-            </div>
+            <p className='text-sm font-semibold tabular-nums text-gray-text dark:text-dark-text'>
+                {formatar(alvo, formato)}
+                {formato === 'clientes' && <span className='font-normal text-gray-dark/70'> clientes</span>}
+            </p>
 
             <div
                 role='progressbar'
@@ -316,6 +305,16 @@ function Progresso({
                     </>
                 )}
             </p>
+
+            {naSupermeta && (
+                <p
+                    title={`Meta de ${formatar(meta, formato)} batida`}
+                    className='mt-0.5 flex items-center gap-1 text-xs font-semibold text-green-base'
+                >
+                    <CheckIcon className='h-3 w-3 shrink-0' />
+                    Meta batida
+                </p>
+            )}
 
             {!bateuMeta && supermeta !== null && (
                 <p className='mt-0.5 text-xs text-gray-dark/50 dark:text-dark-text-muted'>
