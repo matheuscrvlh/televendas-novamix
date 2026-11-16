@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import Logo from './Logo'
 import { CloseIcon, LogOutIcon, MenuIcon } from './icons'
+import { CLIENTES_ADMIN_ATIVO, PEDIDOS_ADMIN_ATIVO } from '../lib/funcionalidades'
 
 type SidebarProps = {
     isAdmin: boolean
@@ -15,13 +16,13 @@ const linkInactiveClass =
     'text-gray-text hover:bg-orange-base/10 hover:text-orange-base dark:text-dark-text dark:hover:bg-orange-base/10 dark:hover:text-orange-light'
 const linkDisabledClass = 'cursor-not-allowed text-gray-dark/50 dark:text-dark-text-muted/40'
 
-const PAGINAS_ADMIN: { to: string; label: string }[] = [
+const PAGINAS_ADMIN: { to: string; label: string; ativa?: boolean }[] = [
     { to: '/dashboard/categorias', label: 'Categorias e Produtos' },
-    { to: '/dashboard/pedidos', label: 'Pedidos' },
-    { to: '/dashboard/clientes', label: 'Clientes' },
+    { to: '/dashboard/pedidos', label: 'Pedidos', ativa: PEDIDOS_ADMIN_ATIVO },
+    { to: '/dashboard/clientes', label: 'Clientes', ativa: CLIENTES_ADMIN_ATIVO },
     { to: '/dashboard/marketing', label: 'Marketing' },
     { to: '/dashboard/configuracoes', label: 'Configurações' },
-]
+].filter((pagina) => pagina.ativa !== false)
 
 export default function Sidebar({ isAdmin }: SidebarProps) {
     const [isOpen, setIsOpen] = useState(false)

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { CLIENTES_ADMIN_ATIVO, PEDIDOS_ADMIN_ATIVO } from './lib/funcionalidades'
 import Dashboard from './pages/Dashboard'
 import CategoriasAdmin from './pages/admin/Categorias'
 import PedidosAdmin from './pages/admin/Pedidos'
@@ -38,9 +39,19 @@ export default function App() {
 
         <Route path='/dashboard' element={<Dashboard />}/>
         <Route path='/dashboard/categorias' element={<CategoriasAdmin />}/>
-        <Route path='/dashboard/pedidos' element={<PedidosAdmin />}/>
-        <Route path='/dashboard/pedidos/:pedidoId' element={<PedidoDetalheAdmin />}/>
-        <Route path='/dashboard/clientes' element={<ClientesAdmin />}/>
+        {/* Abas "Pedidos" e "Clientes" desligadas por enquanto: o endereço volta pro Dashboard (ver lib/funcionalidades.ts). */}
+        <Route
+          path='/dashboard/pedidos'
+          element={PEDIDOS_ADMIN_ATIVO ? <PedidosAdmin /> : <Navigate to='/dashboard' replace />}
+        />
+        <Route
+          path='/dashboard/pedidos/:pedidoId'
+          element={PEDIDOS_ADMIN_ATIVO ? <PedidoDetalheAdmin /> : <Navigate to='/dashboard' replace />}
+        />
+        <Route
+          path='/dashboard/clientes'
+          element={CLIENTES_ADMIN_ATIVO ? <ClientesAdmin /> : <Navigate to='/dashboard' replace />}
+        />
         <Route path='/dashboard/configuracoes' element={<ConfiguracoesAdmin />}/>
         <Route path='/dashboard/marketing' element={<MarketingAdmin />}/>
       </Routes>
