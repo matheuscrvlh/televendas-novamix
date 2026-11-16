@@ -47,7 +47,7 @@ export default function Dashboard() {
                 <StatCard
                     titulo='Clientes ativos'
                     valor={formatNumber(visaoGeral.data?.CLIENTES_ATIVOS ?? 0)}
-                    subtitulo='na base de televendas'
+                    subtitulo='compraram no período'
                     loading={visaoGeral.loading}
                     erro={visaoGeral.erro}
                 />

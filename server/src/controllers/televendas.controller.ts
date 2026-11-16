@@ -37,7 +37,7 @@ export async function getVisaoGeral(req: FastifyRequest, res: FastifyReply) {
     try {
         const [kpis, ativos] = await Promise.all([
             conn.query(kpisSql, [periodo.inicio, periodo.fim]),
-            conn.query(ativosSql),
+            conn.query(ativosSql, [periodo.inicio, periodo.fim]),
         ])
         res.send({ ...kpis[0], ...ativos[0] })
     } finally {
