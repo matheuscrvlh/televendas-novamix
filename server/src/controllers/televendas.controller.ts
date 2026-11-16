@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify'
 import { checkPermission } from '../middlewares/auth.middlewares'
 import { connCiss } from '../database/ciss.database'
+import { querySupabase } from '../database/supabase.database'
 import { sqlComVendedores as sqlComVendedoresBase } from '../services/vendedores.service'
 
 interface PeriodoQuery {
@@ -174,4 +175,72 @@ export async function getClienteHistorico(req: FastifyRequest, res: FastifyReply
     } finally {
         await conn.close()
     }
+}
+
+const MES_REGEX = /^\d{4}-(0[1-9]|1[0-2])$/
+
+/** '2026-11' -> { inicio: '2026-11-01', fim: '2026-11-30' } */
+function limitesDoMes(mes: string) {
+    const [ano, numeroMes] = mes.split('-').map(Number)
+    const ultimoDia = new Date(Date.UTC(ano, numeroMes, 0)).getUTCDate()
+    return { inicio: `${mes}-01`, fim: `${mes}-${String(ultimoDia).padStart(2, '0')}` }
+}
+
+// Meta do mês (Supabase) + quanto já foi faturado no mês inteiro (CISS), para o card de faturamento.
+export async function getMeta(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return
+
+    const { mes } = req.query as { mes?: string }
+    if (!mes || !MES_REGEX.test(mes)) {
+        res.code(400).send({ error: 'Informe o mês no formato YYYY-MM.' })
+        return
+    }
+
+    const { inicio, fim } = limitesDoMes(mes)
+    const kpisSql = await sqlComVendedores('kpis_periodo.sql')
+
+    const buscarRealizado = async () => {
+        const conn = await connCiss()
+        try {
+            const [kpis] = await conn.query(kpisSql, [inicio, fim])
+            return Number(kpis?.FATURAMENTO_TOTAL ?? 0)
+        } finally {
+            await conn.close()
+        }
+    }
+
+    const [metas, realizado] = await Promise.all([
+        querySupabase<{ valor: string }>('SELECT valor FROM televendas.metas_mensais WHERE mes = $1', [inicio]),
+        buscarRealizado(),
+    ])
+
+    res.send({ mes, meta: metas[0] ? Number(metas[0].valor) : null, realizado })
+}
+
+// Qualquer usuária com acesso ao televendas pode definir a meta (não só admin).
+export async function putMeta(req: FastifyRequest, res: FastifyReply) {
+    const permission = await checkPermission(req, res)
+    if (!permission) return
+
+    const { mes, valor } = req.body as { mes?: string; valor?: number }
+    if (!mes || !MES_REGEX.test(mes)) {
+        res.code(400).send({ error: 'Informe o mês no formato YYYY-MM.' })
+        return
+    }
+    if (typeof valor !== 'number' || !Number.isFinite(valor) || valor <= 0 || valor >= 1e13) {
+        res.code(400).send({ error: 'Informe um valor de meta maior que zero.' })
+        return
+    }
+
+    const { inicio } = limitesDoMes(mes)
+    const [meta] = await querySupabase<{ valor: string }>(
+        `INSERT INTO televendas.metas_mensais (mes, valor)
+         VALUES ($1, $2)
+         ON CONFLICT (mes) DO UPDATE SET valor = $2, atualizado_em = now()
+         RETURNING valor`,
+        [inicio, Math.round(valor * 100) / 100]
+    )
+
+    res.send({ mes, meta: Number(meta.valor) })
 }

@@ -72,3 +72,10 @@ export interface HistoricoCliente {
     produtos: ProdutoHistoricoCliente[]
     pedidos: PedidoHistoricoCliente[]
 }
+
+/** Meta de faturamento do mês e quanto já foi faturado no mês inteiro. */
+export interface MetaMes {
+    mes: string
+    meta: number | null
+    realizado: number
+}

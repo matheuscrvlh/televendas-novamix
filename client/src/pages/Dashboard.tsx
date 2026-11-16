@@ -7,6 +7,7 @@ import DateRangeFilter from '../components/DateRangeFilter'
 import ProdutoThumbnail from '../components/ProdutoThumbnail'
 import ClienteItensModal from '../components/ClienteItensModal'
 import ClienteHistoricoModal from '../components/ClienteHistoricoModal'
+import MetaMesBloco from '../components/MetaMesBloco'
 import { useMe } from '../hooks/useMe'
 import { useTelevendas } from '../hooks/useTelevendas'
 import { formatCurrency, formatNumber, formatPercent, formatDate } from '../lib/format'
@@ -55,7 +56,10 @@ export default function Dashboard() {
                     subtitulo={`${formatDate(inicio)} – ${formatDate(fim)}`}
                     loading={visaoGeral.loading}
                     erro={visaoGeral.erro}
-                />
+                >
+                    {/* Meta do mês da data final do filtro; key reinicia o bloco (edição, valor salvo) ao trocar de mês. */}
+                    <MetaMesBloco key={fim.slice(0, 7)} mes={fim.slice(0, 7)} habilitado={habilitado} />
+                </StatCard>
                 <StatCard
                     titulo='Clientes ativos'
                     valor={formatNumber(visaoGeral.data?.CLIENTES_ATIVOS ?? 0)}

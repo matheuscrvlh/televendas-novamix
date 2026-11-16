@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Spinner from './Spinner'
 
 type StatCardProps = {
@@ -6,9 +7,11 @@ type StatCardProps = {
     subtitulo?: string
     loading?: boolean
     erro?: string | null
+    /** Conteúdo extra no rodapé do card (ex.: a meta do mês no card de faturamento). */
+    children?: ReactNode
 }
 
-export default function StatCard({ titulo, valor, subtitulo, loading, erro }: StatCardProps) {
+export default function StatCard({ titulo, valor, subtitulo, loading, erro, children }: StatCardProps) {
     return (
         <div className='rounded-xl border border-gray-base/30 bg-white p-6 shadow-sm dark:border-dark-border dark:bg-dark-surface'>
             <span className='text-xs font-semibold uppercase tracking-wide text-gray-dark dark:text-dark-text-muted'>
@@ -26,6 +29,8 @@ export default function StatCard({ titulo, valor, subtitulo, loading, erro }: St
             {subtitulo && !erro && (
                 <p className='mt-1 text-xs text-gray-dark dark:text-dark-text-muted'>{subtitulo}</p>
             )}
+
+            {children}
         </div>
     )
 }

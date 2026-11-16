@@ -7,6 +7,8 @@ import {
     getTopProdutos,
     getClienteItens,
     getClienteHistorico,
+    getMeta,
+    putMeta,
 } from '../controllers/televendas.controller'
 
 export function televendasRoutes(fastify) {
@@ -17,4 +19,6 @@ export function televendasRoutes(fastify) {
     fastify.get('/televendas/top-produtos', { preHandler: [authenticate] }, getTopProdutos)
     fastify.get('/televendas/clientes/:idclifor/itens', { preHandler: [authenticate] }, getClienteItens)
     fastify.get('/televendas/clientes/:idclifor/historico', { preHandler: [authenticate] }, getClienteHistorico)
+    fastify.get('/televendas/meta', { preHandler: [authenticate] }, getMeta)
+    fastify.put('/televendas/meta', { preHandler: [authenticate] }, putMeta)
 }
